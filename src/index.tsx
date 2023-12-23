@@ -3,13 +3,12 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import Header from './components/Header';
 import { Counter } from './features/counter/Counter';
+import { Thread } from './features/threads/Thread';
 
 export const App = () => {
   return (
     <View style={styles.container}>
-      <Header />
-      <Counter />
-      <StatusBar style="auto" />
+      <Thread id="threadId1" />
     </View>
   );
 };

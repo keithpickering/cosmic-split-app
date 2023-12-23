@@ -38,6 +38,31 @@ export const fetchPostList = createAsyncThunk(
         queryParams.set('threadId', params.threadId);
       }
 
+      return [
+        {
+          id: "post1",
+          poster: {
+            accountId: "accountId",
+            personaId: "personaId",
+          },
+          threadId: "threadId1",
+          content: "post content",
+          dateCreated: "2023-12-23T22:03:54Z",
+          dateUpdated: "2023-12-23T22:03:54Z",
+        },
+        {
+          id: "post2",
+          poster: {
+            accountId: "accountId",
+            personaId: "personaId",
+          },
+          threadId: "threadId1",
+          content: "post content 2",
+          dateCreated: "2023-12-23T22:03:54Z",
+          dateUpdated: "2023-12-23T22:03:54Z",
+        }
+      ] as Post[];
+
       return await fetchWithAuth(`/api/posts?${queryParams.toString()}`, { method: 'GET', token });
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');

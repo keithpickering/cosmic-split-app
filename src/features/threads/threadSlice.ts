@@ -4,6 +4,7 @@ import { Post } from '../posts';
 import { fetchWithAuth } from '../../app/api'; 
 import { FetchThreadsRequest, ThreadInput } from '.';
 import { fetchPostList } from '../posts/postSlice';
+import { RootState } from '../../app/store';
 
 /**
  * Represents a thread, or a collection of posts.
@@ -15,14 +16,14 @@ import { fetchPostList } from '../posts/postSlice';
  * @property {string} originalPosterAccountId - Identifier for the account of the original poster.
  * @property {string} originalPosterPersonaId - Identifier for the persona of the original poster.
  * @property {string} title - The title of the thread.
- * @property {Post[]} posts - An array of posts that belong to the thread.
+ * @property {Post[]} [posts] - An array of posts that belong to the thread.
  */
 export type Thread = {
   id: string;
   originalPosterAccountId: string;
   originalPosterPersonaId: string;
   title: string;
-  posts: Post[];
+  posts?: Post[];
 }
 
 /**
@@ -35,6 +36,12 @@ export const fetchSingleThread = createAsyncThunk(
   'threads/fetchSingleThread',
   async ({ threadId, token }: { threadId: string; token?: string }, { rejectWithValue }) => {
     try {
+      return {
+        id: "threadId1",
+        title: "Test thread 1",
+        originalPosterAccountId: "accountId",
+        originalPosterPersonaId: "personaId",
+      } as Thread
       return await fetchWithAuth(`/api/threads/${threadId}`, { method: 'GET', token });
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
@@ -144,7 +151,7 @@ const threadSlice = createSlice({
       })
       .addCase(fetchSingleThread.fulfilled, (state, action) => {
         state.activeId = action.payload.id;
-        state.posts = action.payload.posts;
+        //state.posts = action.payload.posts;
         state.status = AsyncStatus.SUCCEEDED;
       })
       .addCase(fetchSingleThread.rejected, (state) => {
@@ -166,4 +173,9 @@ const threadSlice = createSlice({
 });
 
 export const { setActiveThreadId } = threadSlice.actions;
+
+export const selectActiveThread = (state: RootState) => {
+  return state.thread;
+}
+
 export default threadSlice.reducer;

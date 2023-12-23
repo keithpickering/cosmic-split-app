@@ -11,14 +11,12 @@ import { Post } from "../posts";
  * @property {string} originalPosterAccountId - Identifier for the account of the original poster.
  * @property {string} originalPosterPersonaId - Identifier for the persona of the original poster.
  * @property {string} title - The title of the thread.
- * @property {Post[]} posts - An array of posts that belong to the thread.
  */
 export type Thread = {
   id: string;
   originalPosterAccountId: string;
   originalPosterPersonaId: string;
   title: string;
-  posts: Post[];
 }
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,67 +8,58 @@ import {
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { AsyncButton } from '../../components/AsyncButton';
-import {
-  decrement,
-  increment,
-  incrementAsync,
-  incrementByAmount,
-  selectCount,
-} from './threadSlice';
+import { fetchSingleThread, selectActiveThread, setActiveThreadId } from './threadSlice';
+import { fetchPostList } from '../posts/postSlice';
+import { SortMethod, SortOrder } from '../../app/enums';
+import { Post } from '../posts';
 
-export function Counter() {
-  const [incrementAmount, setIncrementAmount] = useState('2');
+export type ThreadProps = {
+  id: string
+}
 
-  // The `state` arg is correctly typed as `RootState` already
-  const count = useAppSelector(selectCount);
-  const status = useAppSelector(state => state.counter.status);
+export function Thread({ id }: ThreadProps) {
   const dispatch = useAppDispatch();
+  const thread = useAppSelector(selectActiveThread);
+
+  useEffect(() => {
+    if (!id) {
+      dispatch(setActiveThreadId(null));
+      return;
+    }
+    dispatch(setActiveThreadId(id));
+    dispatch(fetchSingleThread({ threadId: id }));
+    dispatch(fetchPostList({
+      params: {
+        threadId: id,
+        pageSize: 10,
+        skipCount: 0,
+        sortMethod: SortMethod.DATE,
+        sortOrder: SortOrder.ASC,
+      }
+    }));
+  }, [id])
+
+  console.log(id);
+  console.log(thread);
+
+  const renderPosts = () => {
+    return thread.posts?.map(({ id, content, dateCreated, dateUpdated }: Post) => (
+      <View key={id}>
+        <Text>{content}</Text>
+        <Text>{dateCreated}</Text>
+      </View>
+    ))
+  }
 
   return (
-    <View>
-      <View style={styles.row}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => dispatch(increment())}>
-          <Text style={styles.buttonText}>+</Text>
-        </TouchableOpacity>
-        <Text style={styles.value}>{count}</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => dispatch(decrement())}>
-          <Text style={styles.buttonText}>-</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.row}>
-        <TextInput
-          style={styles.textbox}
-          value={incrementAmount}
-          keyboardType="numeric"
-          onChangeText={setIncrementAmount}
-        />
-        <View>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() =>
-              dispatch(incrementByAmount(Number(incrementAmount) || 0))
-            }>
-            <Text style={styles.buttonText}>Add Amount</Text>
-          </TouchableOpacity>
-          <AsyncButton
-            style={styles.button}
-            disabled={status !== 'idle'}
-            onPress={() =>
-              dispatch(incrementAsync(Number(incrementAmount) || 0))
-            }>
-            <Text style={styles.buttonText}>Add Async</Text>
-          </AsyncButton>
-        </View>
-      </View>
+    <View style={styles.root}>
+      {renderPosts()}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {},
   row: {
     flexDirection: 'row',
     alignItems: 'center',
