@@ -1,4 +1,4 @@
-import { PaginationRequest } from "../../app/interfaces";
+import { PaginationRequest } from "../../interfaces";
 
 type Badge = {
   id: string;

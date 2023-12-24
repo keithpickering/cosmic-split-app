@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { useAppDispatch, useAppSelector } from '../../hooks';
 import { AsyncButton } from '../../components/AsyncButton';
-import { fetchSingleThread, selectActiveThread, setActiveThreadId } from './threadSlice';
-import { fetchPostList } from '../posts/postSlice';
-import { SortMethod, SortOrder } from '../../app/enums';
+import { fetchSingleThread, selectActiveThread } from './threadSlice';
+import { fetchPostList, selectPostList } from '../posts/postSlice';
+import { SortMethod, SortOrder } from '../../enums';
 import { Post } from '../posts';
+
+const pageSize: number = 10;
 
 export type ThreadProps = {
   id: string
@@ -20,30 +22,30 @@ export type ThreadProps = {
 export function Thread({ id }: ThreadProps) {
   const dispatch = useAppDispatch();
   const thread = useAppSelector(selectActiveThread);
+  const posts = useAppSelector(selectPostList);
 
+  // On `id` change, fetch thread metadata and initial page of posts
   useEffect(() => {
+    // Return if no id
     if (!id) {
-      dispatch(setActiveThreadId(null));
       return;
     }
-    dispatch(setActiveThreadId(id));
+    // Fetch thread metadata
     dispatch(fetchSingleThread({ threadId: id }));
+    // Fetch posts
     dispatch(fetchPostList({
       params: {
         threadId: id,
-        pageSize: 10,
-        skipCount: 0,
+        pageSize,
+        skipCount: posts.length,
         sortMethod: SortMethod.DATE,
         sortOrder: SortOrder.ASC,
       }
     }));
-  }, [id])
-
-  console.log(id);
-  console.log(thread);
+  }, [id]);
 
   const renderPosts = () => {
-    return thread.posts?.map(({ id, content, dateCreated, dateUpdated }: Post) => (
+    return posts?.map(({ id, content, dateCreated, dateUpdated }: Post) => (
       <View key={id}>
         <Text>{content}</Text>
         <Text>{dateCreated}</Text>

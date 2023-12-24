@@ -1,9 +1,9 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
-import Header from './components/Header';
-import { Counter } from './features/counter/Counter';
-import { Thread } from './features/threads/Thread';
+import Header from '../components/Header';
+import { Counter } from '../features/counter/Counter';
+import { Thread } from '../features/threads/Thread';
 
 export const App = () => {
   return (

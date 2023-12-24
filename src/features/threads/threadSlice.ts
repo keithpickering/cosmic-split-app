@@ -1,10 +1,10 @@
 import {createAsyncThunk, createSlice, PayloadAction} from '@reduxjs/toolkit';
-import { AsyncStatus } from '../../app/enums';
+import { AsyncStatus } from '../../enums';
 import { Post } from '../posts';
-import { fetchWithAuth } from '../../app/api'; 
+import { fetchWithAuth } from '../../api'; 
 import { FetchThreadsRequest, ThreadInput } from '.';
 import { fetchPostList } from '../posts/postSlice';
-import { RootState } from '../../app/store';
+import { RootState } from '../../store';
 
 /**
  * Represents a thread, or a collection of posts.
@@ -119,60 +119,34 @@ export const editThread = createAsyncThunk(
 
 interface ThreadState {
   status: AsyncStatus;
-  activeId: string | null;
-  posts: Post[];
-  hasMorePosts: boolean;
+  activeThread: Thread | null;
 }
 
 const initialState: ThreadState = {
   status: AsyncStatus.IDLE,
-  activeId: null,
-  posts: [],
-  hasMorePosts: true,
+  activeThread: null,
 };
 
 const threadSlice = createSlice({
   name: 'thread',
   initialState,
-  reducers: {
-    setActiveThreadId: (state, action: PayloadAction<string | null>) => {
-      state.activeId = action.payload;
-      // Reset posts and status when changing threads
-      state.posts = [];
-      state.hasMorePosts = true;
-      state.status = AsyncStatus.IDLE;
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       // Handling fetchSingleThread
       .addCase(fetchSingleThread.pending, (state) => {
+        state.activeThread = null;
         state.status = AsyncStatus.LOADING;
       })
       .addCase(fetchSingleThread.fulfilled, (state, action) => {
-        state.activeId = action.payload.id;
-        //state.posts = action.payload.posts;
+        state.activeThread = action.payload;
         state.status = AsyncStatus.SUCCEEDED;
       })
       .addCase(fetchSingleThread.rejected, (state) => {
         state.status = AsyncStatus.FAILED;
       })
-      // Handling fetchPostList
-      .addCase(fetchPostList.pending, (state) => {
-        state.status = AsyncStatus.LOADING;
-      })
-      .addCase(fetchPostList.fulfilled, (state, action) => {
-        state.posts = [...state.posts, ...action.payload];
-        state.hasMorePosts = action.payload.length > 0;
-        state.status = AsyncStatus.SUCCEEDED;
-      })
-      .addCase(fetchPostList.rejected, (state) => {
-        state.status = AsyncStatus.FAILED;
-      });
   },
 });
-
-export const { setActiveThreadId } = threadSlice.actions;
 
 export const selectActiveThread = (state: RootState) => {
   return state.thread;

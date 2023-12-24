@@ -5,8 +5,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import {useAppDispatch, useAppSelector} from '../../app/hooks';
+} from 'react-native/';
+import {useAppDispatch, useAppSelector} from '../../hooks';
 import {AsyncButton} from '../../components/AsyncButton';
 import {
   decrement,

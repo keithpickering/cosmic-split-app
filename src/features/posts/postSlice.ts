@@ -1,5 +1,8 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
-import { fetchWithAuth } from "../../app/api";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { fetchWithAuth } from "../../api";
+import { AsyncStatus } from "../../enums";
+import { RootState } from "../../store";
+import { fetchSingleThread } from "../threads/threadSlice";
 import { FetchPostsRequest, Post, PostInput } from "./";
 
 /**
@@ -111,3 +114,56 @@ export const editPost = createAsyncThunk(
     }
   }
 );
+
+interface PostState {
+  status: AsyncStatus;
+  list: Post[];
+  hasMore: boolean;
+}
+
+const initialState: PostState = {
+  status: AsyncStatus.IDLE,
+  list: [],
+  hasMore: true,
+};
+
+const postSlice = createSlice({
+  name: 'posts',
+  initialState,
+  reducers: {
+    resetPostList: (state) => {
+      state.list = [];
+      state.hasMore = true;
+      state.status = AsyncStatus.IDLE;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Handling fetchSingleThread
+      .addCase(fetchSingleThread.pending, (state) => {
+        state.list = [];
+        state.hasMore = true;
+        state.status = AsyncStatus.IDLE;
+      })
+      // Handling fetchPostList
+      .addCase(fetchPostList.pending, (state) => {
+        state.status = AsyncStatus.LOADING;
+      })
+      .addCase(fetchPostList.fulfilled, (state, action) => {
+        state.list = [...state.list, ...action.payload];
+        state.hasMore = action.payload.length > 0;
+        state.status = AsyncStatus.SUCCEEDED;
+      })
+      .addCase(fetchPostList.rejected, (state) => {
+        state.status = AsyncStatus.FAILED;
+      });
+  },
+});
+
+export const { resetPostList } = postSlice.actions;
+
+export const selectPostList = (state: RootState) => {
+  return state.posts.list;
+}
+
+export default postSlice.reducer;
