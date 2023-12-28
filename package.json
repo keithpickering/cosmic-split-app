@@ -46,6 +46,6 @@
   },
   "private": true,
   "msw": {
-    "workerDirectory": "src\\app"
+    "workerDirectory": "public"
   }
 }

@@ -1,10 +1,9 @@
-import { http, HttpResponse, RequestHandler } from 'msw';
-import { Post } from '../features/posts';
-import { Thread } from '../features/threads';
+import { http } from 'msw';
+import { API_BASE_URL } from '../api';
 
-export const handlers: RequestHandler[] = [
+/*export const handlers: RequestHandler[] = [
   // Handles a GET request to fetch a single thread
-  http.get('/api/threads/:threadId', ({ params }) => {
+  http.get(`${API_BASE_URL}/api/threads/:threadId`, ({ params }) => {
     const { threadId } = params;
 
     // Mock response data as per the Thread type
@@ -20,4 +19,6 @@ export const handlers: RequestHandler[] = [
 
   // Handles a GET request to fetch a thread's posts
  // http.get('/api/posts?threadId=:threadId')
-];
+];*/
+
+export const handlers = [];
