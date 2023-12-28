@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { fetchWithAuth } from "../../api";
 import { AsyncStatus } from "../../enums";
-import { RootState } from "../../store";
+import { RootState } from "../../app/store";
 import { fetchSingleThread } from "../threads/threadSlice";
 import { FetchPostsRequest, Post, PostInput } from "./";
 
@@ -41,7 +41,7 @@ export const fetchPostList = createAsyncThunk(
         queryParams.set('threadId', params.threadId);
       }
 
-      return [
+      /*return [
         {
           id: "post1",
           poster: {
@@ -64,9 +64,9 @@ export const fetchPostList = createAsyncThunk(
           dateCreated: "2023-12-23T22:03:54Z",
           dateUpdated: "2023-12-23T22:03:54Z",
         }
-      ] as Post[];
+      ] as Post[];*/
 
-      return await fetchWithAuth(`/api/posts?${queryParams.toString()}`, { method: 'GET', token });
+      return await fetchWithAuth(`/posts?${queryParams.toString()}`, { method: 'GET', token });
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
     }
@@ -83,7 +83,7 @@ export const createNewPost = createAsyncThunk(
   'posts/createNewPost',
   async ({ postData, token }: { postData: PostInput; token: string }, { rejectWithValue }) => {
     try {
-      return await fetchWithAuth('/api/posts', {
+      return await fetchWithAuth('/posts', {
         method: 'POST',
         jsonBody: postData,
         token,
@@ -104,7 +104,7 @@ export const editPost = createAsyncThunk(
   'posts/editPost',
   async ({ postId, updateData, token }: { postId: string; updateData: Partial<PostInput>; token: string }, { rejectWithValue }) => {
     try {
-      return await fetchWithAuth(`/api/posts/${postId}`, {
+      return await fetchWithAuth(`/posts/${postId}`, {
         method: 'PATCH',
         jsonBody: updateData,
         token,

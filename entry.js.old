@@ -1,0 +1,40 @@
+/**
+ * @file Custom entry.js file to setup server mocking + fix console error related to React 18
+ * @see {@link https://github.com/expo/expo/issues/18485 The related bug ticket}
+ * @todo Track the Expo bug and reevaluate solution if necessary.
+*/
+import "expo/build/Expo.fx";
+import { Platform } from "react-native";
+import { registerRootComponent } from "expo";
+import { activateKeepAwake } from "expo-keep-awake";
+import { createRoot } from "react-dom/client";
+import App from "./App";
+
+/**
+ * Function to enable server mocking before rendering the app. This allows our
+ * regular remote API requests to be intercepted by MSW (Mock Service Worker)
+ * and return filler/dummy data when working locally.
+ * @returns {Promise|undefined} Promise that resolves once the Service Worker
+ *                              is up and ready to intercept requests.
+ */
+/*async function enableMocking() {
+  // We don't want to do this in environments other than dev
+  if (process.env.NODE_ENV !== 'development') {
+    return;
+  }
+  const { worker } = await import('./src/mocks/browser');
+  return worker.start();
+}*/
+
+if (__DEV__) {
+  activateKeepAwake();
+}
+
+if (Platform.OS === "web") {
+  const root = createRoot(
+    document.getElementById("root") ?? document.getElementById("main")
+  );
+  root.render(<App />);
+} else {
+  registerRootComponent(App);
+}

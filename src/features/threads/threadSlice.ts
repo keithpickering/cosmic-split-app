@@ -4,7 +4,7 @@ import { Post } from '../posts';
 import { fetchWithAuth } from '../../api'; 
 import { FetchThreadsRequest, ThreadInput } from '.';
 import { fetchPostList } from '../posts/postSlice';
-import { RootState } from '../../store';
+import { RootState } from '../../app/store';
 
 /**
  * Represents a thread, or a collection of posts.
@@ -36,13 +36,7 @@ export const fetchSingleThread = createAsyncThunk(
   'threads/fetchSingleThread',
   async ({ threadId, token }: { threadId: string; token?: string }, { rejectWithValue }) => {
     try {
-      return {
-        id: "threadId1",
-        title: "Test thread 1",
-        originalPosterAccountId: "accountId",
-        originalPosterPersonaId: "personaId",
-      } as Thread
-      return await fetchWithAuth(`/api/threads/${threadId}`, { method: 'GET', token });
+      return await fetchWithAuth(`/threads/${threadId}`, { method: 'GET', token });
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
     }
@@ -68,7 +62,7 @@ export const fetchThreadList = createAsyncThunk(
         queryParams.set('forumId', params.forumId);
       }
 
-      return await fetchWithAuth(`/api/threads?${queryParams.toString()}`, { method: 'GET', token });
+      return await fetchWithAuth(`/threads?${queryParams.toString()}`, { method: 'GET', token });
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
     }
@@ -85,7 +79,7 @@ export const createNewThread = createAsyncThunk(
   'threads/createNewThread',
   async ({ threadData, token }: { threadData: ThreadInput; token: string }, { rejectWithValue }) => {
     try {
-      return await fetchWithAuth('/api/threads', {
+      return await fetchWithAuth('/threads', {
         method: 'POST',
         jsonBody: threadData,
         token,
@@ -106,7 +100,7 @@ export const editThread = createAsyncThunk(
   'threads/editThread',
   async ({ threadId, updateData, token }: { threadId: string; updateData: Partial<ThreadInput>; token: string }, { rejectWithValue }) => {
     try {
-      return await fetchWithAuth(`/api/threads/${threadId}`, {
+      return await fetchWithAuth(`/threads/${threadId}`, {
         method: 'PATCH',
         jsonBody: updateData,
         token,

@@ -1,4 +1,9 @@
 /**
+ * Base URL of the remote API.
+ */
+export const API_BASE_URL = "https://api.cosmicsplit.com/v1";
+
+/**
  * Performs a fetch request with optional authorization and customizable request options.
  * Automatically sets 'Content-Type' to 'application/json' and stringifies the body for POST, PUT, and PATCH requests.
  * 
@@ -31,7 +36,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit & { token?
   };
 
   try {
-    const response = await fetch(url, fetchOptions);
+    const response = await fetch(`${API_BASE_URL}${url}`, fetchOptions);
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }

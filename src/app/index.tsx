@@ -1,14 +1,11 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
-import Header from '../components/Header';
-import { Counter } from '../features/counter/Counter';
-import { Thread } from '../features/threads/Thread';
+import { StyleSheet, Text, View } from 'react-native';
 
-export const App = () => {
+export default function Page() {
   return (
     <View style={styles.container}>
-      <Thread id="threadId1" />
+      <Text>Hello index</Text>
     </View>
   );
 };
