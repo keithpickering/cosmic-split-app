@@ -1,12 +1,13 @@
 import { Stack } from "expo-router";
 import React, { useEffect } from 'react';
 import { useState } from "react";
+import { Platform } from "react-native";
 import "react-native-url-polyfill/auto";
 import { Provider } from 'react-redux';
 import { store } from '../store';
 
 async function enableMocking() {
-  if (process.env.NODE_ENV !== 'development') {
+  if (Platform.OS !== "web" || process.env.NODE_ENV !== 'development') {
     return;
   }
  
