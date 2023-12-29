@@ -1,14 +1,15 @@
 import { PaginationRequest } from "../../interfaces";
 
-type Badge = {
+export type Badge = {
   id: string;
   name: string;
   thumbnailUrl: string;
 }
 
-type Poster = {
+export type Poster = {
   accountId: string;
   personaId: string;
+  displayName: string;
   avatar?: string;
   tagline?: string;
   signature?: string;
