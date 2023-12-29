@@ -4,7 +4,7 @@ import { Post } from '../posts';
 import { fetchWithAuth } from '../../api'; 
 import { FetchThreadsRequest, ThreadInput } from '.';
 import { fetchPostList } from '../posts/postSlice';
-import { RootState } from '../../app/store';
+import { RootState } from '../../store';
 
 /**
  * Represents a thread, or a collection of posts.

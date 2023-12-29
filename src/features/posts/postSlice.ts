@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { fetchWithAuth } from "../../api";
 import { AsyncStatus } from "../../enums";
-import { RootState } from "../../app/store";
+import { RootState } from "../../store";
 import { fetchSingleThread } from "../threads/threadSlice";
 import { FetchPostsRequest, Post, PostInput } from "./";
 
