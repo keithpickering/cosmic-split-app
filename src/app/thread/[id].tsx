@@ -6,8 +6,7 @@ export default function ThreadPage() {
   const { id } = useLocalSearchParams();
   return (
     <View>
-      <Text>Hello thread {id}</Text>
-      <Thread id={id} />
+      <Thread id={id?.toString()} />
     </View>
   )
 }

@@ -5,7 +5,8 @@ import { API_BASE_URL } from '../api';
 import { generateFillerPosts, generateFillerThread } from './data';
 
 const mockThreadId = faker.string.uuid();
-const mockPosts = generateFillerPosts(mockThreadId, 100);
+const mockPosts = generateFillerPosts(undefined, 100);
+console.log(mockPosts);
 
 export const handlers: RequestHandler[] = [
   // Handles a GET request to fetch a single thread

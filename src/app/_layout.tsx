@@ -1,3 +1,7 @@
+/**
+ * @file Main layout file for Expo Router.
+ * @see {@link https://docs.expo.dev/router/layouts/ Layout routes documentation}
+ */
 import { Stack } from "expo-router";
 import React, { useEffect } from 'react';
 import { useState } from "react";
@@ -6,15 +10,21 @@ import "react-native-url-polyfill/auto";
 import { Provider } from 'react-redux';
 import { store } from '../store';
 
+/**
+ * Enable data mocking for local development and testing.
+ * @returns {Promise|undefined} Resolves once the Service Worker is up and
+ * ready to intercept requests. Returns early if mocking is not needed.
+ */
 async function enableMocking() {
+  /**
+   * @todo Implement for native platforms as well
+   */
   if (Platform.OS !== "web" || process.env.NODE_ENV !== 'development') {
     return;
   }
  
   const { worker } = await import('../mocks/browser')
- 
-  // `worker.start()` returns a Promise that resolves
-  // once the Service Worker is up and ready to intercept requests.
+
   return worker.start()
 }
 

@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Image,
   View,
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../hooks';
@@ -16,7 +17,7 @@ import { Post } from '../posts';
 const pageSize: number = 10;
 
 export type ThreadProps = {
-  id: string
+  id: string|undefined
 }
 
 export function Thread({ id }: ThreadProps) {
@@ -45,8 +46,10 @@ export function Thread({ id }: ThreadProps) {
   }, [id]);
 
   const renderPosts = () => {
-    return posts?.map(({ id, content, dateCreated, dateUpdated }: Post) => (
-      <View key={id}>
+    return posts?.map(({ id, poster, content, dateCreated, dateUpdated }: Post) => (
+      <View key={id} style={styles.post}>
+        <Text style={{ fontWeight: "700" }}>{poster.displayName}</Text>
+        <Image source={{ uri: poster.avatar }} width={100} height={100} style={styles.avatar} />
         <Text>{content}</Text>
         <Text>{dateCreated}</Text>
       </View>
@@ -95,4 +98,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
   },
+  post: {
+    marginBottom: 20
+  },
+  avatar: {
+    flex: 1,
+    width: 100,
+    height: 100,
+  }
 });
