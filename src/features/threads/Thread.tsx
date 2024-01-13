@@ -1,29 +1,84 @@
 import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  View,
-} from 'react-native';
+import { StyleSheet, View, FlatList, ListRenderItem } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { AsyncButton } from '../../components/AsyncButton';
 import { fetchSingleThread, selectActiveThread } from './threadSlice';
 import { fetchPostList, selectPostList } from '../posts/postSlice';
 import { SortMethod, SortOrder } from '../../enums';
 import { Post } from '../posts';
+import { useCallback } from 'react';
+import { useBoolean } from 'usehooks-ts';
+import { Button, Card, Text, Image } from 'tamagui';
 
 const pageSize: number = 10;
 
 export type ThreadProps = {
-  id: string|undefined
-}
+  id: string | undefined;
+};
 
 export function Thread({ id }: ThreadProps) {
   const dispatch = useAppDispatch();
   const thread = useAppSelector(selectActiveThread);
   const posts = useAppSelector(selectPostList);
+
+  const {
+    value: isLoadingThreadData,
+    setTrue: setLoadingThreadDataTrue,
+    setFalse: setLoadingThreadDataFalse,
+  } = useBoolean(false);
+
+  const {
+    value: isLoadingMorePosts,
+    setTrue: setLoadingMorePostsTrue,
+    setFalse: setLoadingMorePostsFalse,
+  } = useBoolean(false);
+
+  /**
+   * Load the thread metadata
+   */
+  const loadThreadData = async () => {
+    try {
+      setLoadingThreadDataTrue();
+      if (!id) {
+        throw new Error();
+      }
+      dispatch(fetchSingleThread({ threadId: id }));
+    } catch (error) {
+      //
+    } finally {
+      setLoadingThreadDataFalse();
+    }
+  }
+
+  /**
+   * Load the next page of posts
+   */
+  const loadMorePosts = useCallback(async () => {
+    try {
+      setLoadingMorePostsTrue();
+      const nextPosts: Post[] = await dispatch(
+        fetchPostList({
+          params: {
+            threadId: id,
+            pageSize,
+            skipCount: posts.length,
+            sortMethod: SortMethod.DATE,
+            sortOrder: SortOrder.ASC,
+          },
+        }),
+      );
+    } catch (error) {
+      //
+    } finally {
+      setLoadingMorePostsFalse();
+    }
+  }, [
+    dispatch,
+    id,
+    posts.length,
+    setLoadingMorePostsFalse,
+    setLoadingMorePostsTrue,
+  ]);
 
   // On `id` change, fetch thread metadata and initial page of posts
   useEffect(() => {
@@ -32,33 +87,36 @@ export function Thread({ id }: ThreadProps) {
       return;
     }
     // Fetch thread metadata
-    dispatch(fetchSingleThread({ threadId: id }));
-    // Fetch posts
-    dispatch(fetchPostList({
-      params: {
-        threadId: id,
-        pageSize,
-        skipCount: posts.length,
-        sortMethod: SortMethod.DATE,
-        sortOrder: SortOrder.ASC,
-      }
-    }));
-  }, [id]);
+    loadThreadData();
+    // Fetch iniital page of posts
+    loadMorePosts();
+  }, [dispatch, id]);
 
+  /**
+   * Render a single post
+   * @returns {React.JSX.Element}
+   */
+  const renderPost: ListRenderItem<Post> = ({ item }) => {
+    console.log(item);
+    return (
+      <Card bordered padded marginBottom="$6">
+        <Text>{item.content}</Text>
+      </Card>
+    );
+  };
+
+  /**
+   * Render a list of posts
+   * @returns {FlatList}
+   */
   const renderPosts = () => {
-    return posts?.map(({ id, poster, content, dateCreated, dateUpdated }: Post) => (
-      <View key={id} style={styles.post}>
-        <Text style={{ fontWeight: "700" }}>{poster.displayName}</Text>
-        <Image source={{ uri: poster.avatar }} width={100} height={100} style={styles.avatar} />
-        <Text>{content}</Text>
-        <Text>{dateCreated}</Text>
-      </View>
-    ))
-  }
+    return <FlatList data={posts} renderItem={renderPost} />;
+  };
 
   return (
     <View style={styles.root}>
       {renderPosts()}
+      <Button onPress={loadMorePosts}>Load more</Button>
     </View>
   );
 }
@@ -99,11 +157,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   post: {
-    marginBottom: 20
+    marginBottom: 20,
   },
   avatar: {
     flex: 1,
     width: 100,
     height: 100,
-  }
+  },
 });

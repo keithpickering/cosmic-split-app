@@ -12,8 +12,11 @@ module.exports = {
       files: ['*.ts', '*.tsx'],
       rules: {
         '@typescript-eslint/no-shadow': ['error'],
+        '@typescript-eslint/no-unused-vars': 'off',
+        'no-unused-vars': 'warn',
         'no-shadow': 'off',
         'no-undef': 'off',
+        endOfLine: 'off',
       },
     },
   ],
