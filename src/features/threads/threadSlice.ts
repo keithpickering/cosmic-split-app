@@ -1,30 +1,11 @@
-import {createAsyncThunk, createSlice, PayloadAction} from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AsyncStatus } from '../../enums';
 import { Post } from '../posts';
-import { fetchWithAuth } from '../../api'; 
+import { fetchWithAuth } from '../../api';
 import { FetchThreadsRequest, ThreadInput } from '.';
 import { fetchPostList } from '../posts/postSlice';
 import { RootState } from '../../store';
-
-/**
- * Represents a thread, or a collection of posts.
- * 
- * @export
- * @type Thread
- * @typedef {Object} Thread
- * @property {string} id - Unique identifier for the thread.
- * @property {string} originalPosterAccountId - Identifier for the account of the original poster.
- * @property {string} originalPosterPersonaId - Identifier for the persona of the original poster.
- * @property {string} title - The title of the thread.
- * @property {Post[]} [posts] - An array of posts that belong to the thread.
- */
-export type Thread = {
-  id: string;
-  originalPosterAccountId: string;
-  originalPosterPersonaId: string;
-  title: string;
-  posts?: Post[];
-}
+import { Thread } from './Thread';
 
 /**
  * Async thunk for fetching a single thread (public or private) by its ID.
@@ -34,13 +15,21 @@ export type Thread = {
  */
 export const fetchSingleThread = createAsyncThunk(
   'threads/fetchSingleThread',
-  async ({ threadId, token }: { threadId: string; token?: string }, { rejectWithValue }) => {
+  async (
+    { threadId, token }: { threadId: string; token?: string },
+    { rejectWithValue },
+  ) => {
     try {
-      return await fetchWithAuth(`/threads/${threadId}`, { method: 'GET', token });
+      return await fetchWithAuth(`/threads/${threadId}`, {
+        method: 'GET',
+        token,
+      });
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
-  }
+  },
 );
 
 /**
@@ -51,7 +40,10 @@ export const fetchSingleThread = createAsyncThunk(
  */
 export const fetchThreadList = createAsyncThunk(
   'threads/fetchThreadList',
-  async ({ params, token }: { params: FetchThreadsRequest; token?: string }, { rejectWithValue }) => {
+  async (
+    { params, token }: { params: FetchThreadsRequest; token?: string },
+    { rejectWithValue },
+  ) => {
     try {
       const queryParams = new URLSearchParams();
       queryParams.set('pageSize', params.pageSize.toString());
@@ -62,11 +54,16 @@ export const fetchThreadList = createAsyncThunk(
         queryParams.set('forumId', params.forumId);
       }
 
-      return await fetchWithAuth(`/threads?${queryParams.toString()}`, { method: 'GET', token });
+      return await fetchWithAuth(`/threads?${queryParams.toString()}`, {
+        method: 'GET',
+        token,
+      });
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
-  }
+  },
 );
 
 /**
@@ -77,7 +74,10 @@ export const fetchThreadList = createAsyncThunk(
  */
 export const createNewThread = createAsyncThunk(
   'threads/createNewThread',
-  async ({ threadData, token }: { threadData: ThreadInput; token: string }, { rejectWithValue }) => {
+  async (
+    { threadData, token }: { threadData: ThreadInput; token: string },
+    { rejectWithValue },
+  ) => {
     try {
       return await fetchWithAuth('/threads', {
         method: 'POST',
@@ -85,9 +85,11 @@ export const createNewThread = createAsyncThunk(
         token,
       });
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
-  }
+  },
 );
 
 /**
@@ -98,7 +100,14 @@ export const createNewThread = createAsyncThunk(
  */
 export const editThread = createAsyncThunk(
   'threads/editThread',
-  async ({ threadId, updateData, token }: { threadId: string; updateData: Partial<ThreadInput>; token: string }, { rejectWithValue }) => {
+  async (
+    {
+      threadId,
+      updateData,
+      token,
+    }: { threadId: string; updateData: Partial<ThreadInput>; token: string },
+    { rejectWithValue },
+  ) => {
     try {
       return await fetchWithAuth(`/threads/${threadId}`, {
         method: 'PATCH',
@@ -106,9 +115,11 @@ export const editThread = createAsyncThunk(
         token,
       });
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
-  }
+  },
 );
 
 interface ThreadState {
@@ -125,10 +136,10 @@ const threadSlice = createSlice({
   name: 'thread',
   initialState,
   reducers: {},
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
       // Handling fetchSingleThread
-      .addCase(fetchSingleThread.pending, (state) => {
+      .addCase(fetchSingleThread.pending, state => {
         state.activeThread = null;
         state.status = AsyncStatus.LOADING;
       })
@@ -136,14 +147,14 @@ const threadSlice = createSlice({
         state.activeThread = action.payload;
         state.status = AsyncStatus.SUCCEEDED;
       })
-      .addCase(fetchSingleThread.rejected, (state) => {
+      .addCase(fetchSingleThread.rejected, state => {
         state.status = AsyncStatus.FAILED;
-      })
+      });
   },
 });
 
 export const selectActiveThread = (state: RootState) => {
   return state.thread;
-}
+};
 
 export default threadSlice.reducer;

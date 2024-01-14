@@ -1,9 +1,9 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { fetchWithAuth } from "../../api";
-import { AsyncStatus } from "../../enums";
-import { RootState } from "../../store";
-import { fetchSingleThread } from "../threads/threadSlice";
-import { FetchPostsRequest, Post, PostInput } from "./";
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { fetchWithAuth } from '../../api';
+import { AsyncStatus } from '../../enums';
+import { RootState } from '../../store';
+import { fetchSingleThread } from '../threads/threadSlice';
+import { ApiPost, FetchPostsRequest, Post, PostInput } from './';
 
 /**
  * Async thunk for fetching a single post (public or private) by its ID.
@@ -13,13 +13,21 @@ import { FetchPostsRequest, Post, PostInput } from "./";
  */
 export const fetchSinglePost = createAsyncThunk(
   'posts/fetchSinglePost',
-  async ({ postId, token }: { postId: string; token?: string }, { rejectWithValue }) => {
+  async (
+    { postId, token }: { postId: string; token?: string },
+    { rejectWithValue },
+  ) => {
     try {
-      return await fetchWithAuth(`/api/posts/${postId}`, { method: "GET", token }) as Post;
+      return (await fetchWithAuth(`/api/posts/${postId}`, {
+        method: 'GET',
+        token,
+      })) as Post;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
-  }
+  },
 );
 
 /**
@@ -30,7 +38,10 @@ export const fetchSinglePost = createAsyncThunk(
  */
 export const fetchPostList = createAsyncThunk(
   'posts/fetchPostList',
-  async ({ params, token }: { params: FetchPostsRequest; token?: string }, { rejectWithValue }) => {
+  async (
+    { params, token }: { params: FetchPostsRequest; token?: string },
+    { rejectWithValue },
+  ) => {
     try {
       const queryParams = new URLSearchParams();
       queryParams.set('pageSize', params.pageSize.toString());
@@ -66,11 +77,16 @@ export const fetchPostList = createAsyncThunk(
         }
       ] as Post[];*/
 
-      return await fetchWithAuth(`/posts?${queryParams.toString()}`, { method: 'GET', token });
+      return await fetchWithAuth(`/posts?${queryParams.toString()}`, {
+        method: 'GET',
+        token,
+      });
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
-  }
+  },
 );
 
 /**
@@ -81,7 +97,10 @@ export const fetchPostList = createAsyncThunk(
  */
 export const createNewPost = createAsyncThunk(
   'posts/createNewPost',
-  async ({ postData, token }: { postData: PostInput; token: string }, { rejectWithValue }) => {
+  async (
+    { postData, token }: { postData: PostInput; token: string },
+    { rejectWithValue },
+  ) => {
     try {
       return await fetchWithAuth('/posts', {
         method: 'POST',
@@ -89,9 +108,11 @@ export const createNewPost = createAsyncThunk(
         token,
       });
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
-  }
+  },
 );
 
 /**
@@ -102,7 +123,14 @@ export const createNewPost = createAsyncThunk(
  */
 export const editPost = createAsyncThunk(
   'posts/editPost',
-  async ({ postId, updateData, token }: { postId: string; updateData: Partial<PostInput>; token: string }, { rejectWithValue }) => {
+  async (
+    {
+      postId,
+      updateData,
+      token,
+    }: { postId: string; updateData: Partial<PostInput>; token: string },
+    { rejectWithValue },
+  ) => {
     try {
       return await fetchWithAuth(`/posts/${postId}`, {
         method: 'PATCH',
@@ -110,9 +138,11 @@ export const editPost = createAsyncThunk(
         token,
       });
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
-  }
+  },
 );
 
 interface PostState {
@@ -131,30 +161,44 @@ const postSlice = createSlice({
   name: 'posts',
   initialState,
   reducers: {
-    resetPostList: (state) => {
+    resetPostList: state => {
       state.list = [];
       state.hasMore = true;
       state.status = AsyncStatus.IDLE;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
       // Handling fetchSingleThread
-      .addCase(fetchSingleThread.pending, (state) => {
+      .addCase(fetchSingleThread.pending, state => {
         state.list = [];
         state.hasMore = true;
         state.status = AsyncStatus.IDLE;
       })
       // Handling fetchPostList
-      .addCase(fetchPostList.pending, (state) => {
+      .addCase(fetchPostList.pending, state => {
         state.status = AsyncStatus.LOADING;
       })
       .addCase(fetchPostList.fulfilled, (state, action) => {
-        state.list = [...state.list, ...action.payload];
+        state.list = [
+          ...state.list,
+          ...action.payload.map(
+            (post: ApiPost) =>
+              ({
+                id: post.id,
+                threadId: post.threadId,
+                content: post.content,
+                personaId: post.persona.id,
+                accountId: post.account.id,
+                dateCreated: post.dateCreated,
+                dateUpdated: post.dateUpdated,
+              } as Post),
+          ),
+        ];
         state.hasMore = action.payload.length > 0;
         state.status = AsyncStatus.SUCCEEDED;
       })
-      .addCase(fetchPostList.rejected, (state) => {
+      .addCase(fetchPostList.rejected, state => {
         state.status = AsyncStatus.FAILED;
       });
   },
@@ -164,6 +208,6 @@ export const { resetPostList } = postSlice.actions;
 
 export const selectPostList = (state: RootState) => {
   return state.posts.list;
-}
+};
 
 export default postSlice.reducer;

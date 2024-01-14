@@ -1,16 +1,46 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, FlatList, ListRenderItem } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { StyleSheet, FlatList, ListRenderItem } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { AsyncButton } from '../../components/AsyncButton';
 import { fetchSingleThread, selectActiveThread } from './threadSlice';
 import { fetchPostList, selectPostList } from '../posts/postSlice';
 import { SortMethod, SortOrder } from '../../enums';
-import { Post } from '../posts';
+import { Post, Poster } from '../posts';
 import { useCallback } from 'react';
 import { useBoolean } from 'usehooks-ts';
-import { Button, Card, Text, Image } from 'tamagui';
+import { Button, Card, Text, Image, View, XStack, Paragraph } from 'tamagui';
+import { Persona } from '../personas';
+import { Account } from '../accounts';
 
 const pageSize: number = 10;
+
+export function PostComponent({ accountId, personaId, content }: Post) {
+  const account: Account = useAppSelector(
+    state => state.accounts.data[accountId],
+  );
+
+  const persona: Persona = useAppSelector(
+    state => state.personas.data[personaId],
+  );
+
+  return (
+    <Card bordered padded marginBottom="$6">
+      <XStack gap="$6" flex={1}>
+        <View width={200}>
+          <Text fontWeight="700">{persona.displayName}</Text>
+          {persona.avatar && (
+            <Image source={{ uri: persona.avatar, width: 150, height: 150 }} />
+          )}
+          {!persona.avatar && <Text>No avatar</Text>}
+        </View>
+        <View flex={1}>
+          <Paragraph>{content}</Paragraph>
+        </View>
+      </XStack>
+    </Card>
+  );
+}
 
 export type ThreadProps = {
   id: string | undefined;
@@ -37,6 +67,9 @@ export function Thread({ id }: ThreadProps) {
    * Load the thread metadata
    */
   const loadThreadData = async () => {
+    if (isLoadingThreadData) {
+      return;
+    }
     try {
       setLoadingThreadDataTrue();
       if (!id) {
@@ -48,12 +81,15 @@ export function Thread({ id }: ThreadProps) {
     } finally {
       setLoadingThreadDataFalse();
     }
-  }
+  };
 
   /**
    * Load the next page of posts
    */
-  const loadMorePosts = useCallback(async () => {
+  const loadMorePosts = async () => {
+    if (isLoadingMorePosts) {
+      return;
+    }
     try {
       setLoadingMorePostsTrue();
       const nextPosts: Post[] = await dispatch(
@@ -72,37 +108,29 @@ export function Thread({ id }: ThreadProps) {
     } finally {
       setLoadingMorePostsFalse();
     }
-  }, [
-    dispatch,
-    id,
-    posts.length,
-    setLoadingMorePostsFalse,
-    setLoadingMorePostsTrue,
-  ]);
+  };
 
-  // On `id` change, fetch thread metadata and initial page of posts
-  useEffect(() => {
-    // Return if no id
-    if (!id) {
-      return;
-    }
-    // Fetch thread metadata
-    loadThreadData();
-    // Fetch iniital page of posts
-    loadMorePosts();
-  }, [dispatch, id]);
+  // On focus, fetch thread metadata and initial page of posts
+  useFocusEffect(
+    useCallback(() => {
+      // Return if no id
+      if (!id) {
+        return;
+      }
+      // Fetch thread metadata
+      loadThreadData();
+      // Fetch initial page of posts
+      loadMorePosts();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]),
+  );
 
   /**
    * Render a single post
    * @returns {React.JSX.Element}
    */
   const renderPost: ListRenderItem<Post> = ({ item }) => {
-    console.log(item);
-    return (
-      <Card bordered padded marginBottom="$6">
-        <Text>{item.content}</Text>
-      </Card>
-    );
+    return <PostComponent {...item} />;
   };
 
   /**
@@ -110,11 +138,17 @@ export function Thread({ id }: ThreadProps) {
    * @returns {FlatList}
    */
   const renderPosts = () => {
-    return <FlatList data={posts} renderItem={renderPost} />;
+    return (
+      <FlatList
+        data={posts}
+        keyExtractor={(item: Post) => item.id}
+        renderItem={renderPost}
+      />
+    );
   };
 
   return (
-    <View style={styles.root}>
+    <View padding="$6" paddingHorizontal="$10">
       {renderPosts()}
       <Button onPress={loadMorePosts}>Load more</Button>
     </View>
@@ -122,7 +156,6 @@ export function Thread({ id }: ThreadProps) {
 }
 
 const styles = StyleSheet.create({
-  root: {},
   row: {
     flexDirection: 'row',
     alignItems: 'center',

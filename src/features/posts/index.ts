@@ -1,10 +1,12 @@
-import { PaginationRequest } from "../../interfaces";
+import { PaginationRequest } from '../../interfaces';
+import { Persona } from '../../mocks/data';
+import { Account } from '../accounts';
 
 export type Badge = {
   id: string;
   name: string;
   thumbnailUrl: string;
-}
+};
 
 export type Poster = {
   accountId: string;
@@ -14,16 +16,15 @@ export type Poster = {
   tagline?: string;
   signature?: string;
   badges?: Badge[];
-}
+};
 
 /**
  * Represents a post made by a user.
- * 
+ *
  * @export
  * @type Post
  * @typedef {Object} Post
  * @property {string} id - Unique identifier for the post.
- * @property {Poster} poster - Data related to the user who made the post.
  * @property {string} threadId - Identifier for the thread the post belongs to.
  * @property {string} content - The actual content of the post.
  * @property {string} dateCreated - The ISO string date when the post was created.
@@ -31,12 +32,23 @@ export type Poster = {
  */
 export type Post = {
   id: string;
-  poster: Poster;
+  accountId: string;
+  personaId: string;
   threadId: string;
   content: string;
   dateCreated: string;
   dateUpdated: string;
-}
+};
+
+export type ApiPost = {
+  id: string;
+  account: Account;
+  persona: Persona;
+  threadId: string;
+  content: string;
+  dateCreated: string;
+  dateUpdated: string;
+};
 
 /**
  * Represents a request to fetch posts, including pagination parameters.
@@ -68,4 +80,4 @@ export type PostInput = {
   accountId: string;
   personaId: string;
   content: string;
-}
+};
