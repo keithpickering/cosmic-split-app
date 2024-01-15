@@ -1,8 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { Image } from 'react-native';
 import { Thread } from '../../features/threads/threadSlice';
-import { ApiPost, Post, Poster } from '../../features/posts';
-import { getRandomElement } from '../../utils';
+import { Post, PostFlat, Poster } from '../../features/posts';
 import { Account } from '../../features/accounts';
 import { Persona } from '../../features/personas';
 
@@ -40,7 +38,7 @@ export const fakePersonas: Persona[] = [
   {
     id: '61850d892c3887373b5cf9bface3cdd7',
     ownerAccountId: '709d68522b56b5a66658d2190a72d5bd',
-    displayName: 'Worlds Shortest Escalator',
+    displayName: "World's Shortest Escalator",
     avatar: '/default-avatars/shortestescalator.jpg',
   },
   {
@@ -102,7 +100,7 @@ export const generateFillerPosts = (
       account: poster.account,
       persona: poster.persona,
       content: faker.lorem.paragraphs(),
-    } as ApiPost;
+    } as Post;
   }).sort((a, b) => parseInt(b.dateCreated, 10) - parseInt(a.dateCreated, 10)); // Sort by date
 };
 

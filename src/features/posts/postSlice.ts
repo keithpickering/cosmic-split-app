@@ -3,7 +3,7 @@ import { fetchWithAuth } from '../../api';
 import { AsyncStatus } from '../../enums';
 import { RootState } from '../../store';
 import { fetchSingleThread } from '../threads/threadSlice';
-import { ApiPost, FetchPostsRequest, Post, PostInput } from './';
+import { Post, FetchPostsRequest, PostInput, PostFlat } from './';
 
 /**
  * Async thunk for fetching a single post (public or private) by its ID.
@@ -51,31 +51,6 @@ export const fetchPostList = createAsyncThunk(
       if (params.threadId) {
         queryParams.set('threadId', params.threadId);
       }
-
-      /*return [
-        {
-          id: "post1",
-          poster: {
-            accountId: "accountId",
-            personaId: "personaId",
-          },
-          threadId: "threadId1",
-          content: "post content",
-          dateCreated: "2023-12-23T22:03:54Z",
-          dateUpdated: "2023-12-23T22:03:54Z",
-        },
-        {
-          id: "post2",
-          poster: {
-            accountId: "accountId",
-            personaId: "personaId",
-          },
-          threadId: "threadId1",
-          content: "post content 2",
-          dateCreated: "2023-12-23T22:03:54Z",
-          dateUpdated: "2023-12-23T22:03:54Z",
-        }
-      ] as Post[];*/
 
       return await fetchWithAuth(`/posts?${queryParams.toString()}`, {
         method: 'GET',
@@ -145,15 +120,20 @@ export const editPost = createAsyncThunk(
   },
 );
 
+type PostsKeyed = {
+  [byId: string]: PostFlat;
+};
 interface PostState {
   status: AsyncStatus;
-  list: Post[];
+  allIds: string[];
+  byId: PostsKeyed;
   hasMore: boolean;
 }
 
 const initialState: PostState = {
   status: AsyncStatus.IDLE,
-  list: [],
+  allIds: [],
+  byId: {},
   hasMore: true,
 };
 
@@ -162,7 +142,13 @@ const postSlice = createSlice({
   initialState,
   reducers: {
     resetPostList: state => {
-      state.list = [];
+      state.allIds = [];
+      state.hasMore = true;
+      state.status = AsyncStatus.IDLE;
+    },
+    clearAllPostData: state => {
+      state.allIds = [];
+      state.byId = {};
       state.hasMore = true;
       state.status = AsyncStatus.IDLE;
     },
@@ -171,7 +157,7 @@ const postSlice = createSlice({
     builder
       // Handling fetchSingleThread
       .addCase(fetchSingleThread.pending, state => {
-        state.list = [];
+        state.allIds = [];
         state.hasMore = true;
         state.status = AsyncStatus.IDLE;
       })
@@ -180,21 +166,25 @@ const postSlice = createSlice({
         state.status = AsyncStatus.LOADING;
       })
       .addCase(fetchPostList.fulfilled, (state, action) => {
-        state.list = [
-          ...state.list,
-          ...action.payload.map(
-            (post: ApiPost) =>
-              ({
-                id: post.id,
-                threadId: post.threadId,
-                content: post.content,
-                personaId: post.persona.id,
-                accountId: post.account.id,
-                dateCreated: post.dateCreated,
-                dateUpdated: post.dateUpdated,
-              } as Post),
-          ),
-        ];
+        // Flatten post data, abstracting repeated data by ID.
+        // This effect should also be handled in extraReducers for related
+        // slices, to ensure the abstracted data can be referenced in Redux by ID.
+        state.allIds.push(
+          ...action.payload.reduce((allIds: string[], post: Post) => {
+            const flattenedPost: PostFlat = {
+              id: post.id,
+              threadId: post.threadId,
+              content: post.content,
+              personaId: post.persona.id, // Flattened persona
+              accountId: post.account.id, // Flattened account
+              dateCreated: post.dateCreated,
+              dateUpdated: post.dateUpdated,
+            };
+            state.byId[flattenedPost.id] = flattenedPost;
+            allIds.push(flattenedPost.id);
+            return allIds;
+          }, []),
+        );
         state.hasMore = action.payload.length > 0;
         state.status = AsyncStatus.SUCCEEDED;
       })
@@ -204,10 +194,17 @@ const postSlice = createSlice({
   },
 });
 
-export const { resetPostList } = postSlice.actions;
+export const { resetPostList, clearAllPostData } = postSlice.actions;
 
 export const selectPostList = (state: RootState) => {
-  return state.posts.list;
+  return state.posts.allIds.map(id => state.posts.byId[id]);
+};
+
+export const selectPostById = (id: string) => (state: RootState) => {
+  if (!id) {
+    return null;
+  }
+  return state.posts.byId[id];
 };
 
 export default postSlice.reducer;

@@ -2,20 +2,20 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { fetchWithAuth } from '../../api';
 import { AsyncStatus } from '../../enums';
 import { RootState } from '../../store';
-import { ApiPost, Post, Poster } from '../posts';
+import { Post, Poster } from '../posts';
 import { fetchPostList } from '../posts/postSlice';
 import { Persona } from '.';
 
 type PersonasKeyed = {
-  [data: string]: Persona;
+  [byId: string]: Persona;
 };
 
 interface PersonaState {
-  data: PersonasKeyed;
+  byId: PersonasKeyed;
 }
 
 const initialState: PersonaState = {
-  data: {},
+  byId: {},
 };
 
 const personaSlice = createSlice({
@@ -23,14 +23,14 @@ const personaSlice = createSlice({
   initialState,
   reducers: {
     resetPersonaData: state => {
-      state.data = {};
+      state.byId = {};
     },
   },
   extraReducers: builder => {
     builder.addCase(fetchPostList.fulfilled, (state, action) => {
       const posts = action.payload;
-      posts.forEach((post: ApiPost) => {
-        state.data[post.persona.id] = post.persona;
+      posts.forEach((post: Post) => {
+        state.byId[post.persona.id] = post.persona;
       });
     });
   },

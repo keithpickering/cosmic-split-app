@@ -32,18 +32,18 @@ export type Poster = {
  */
 export type Post = {
   id: string;
-  accountId: string;
-  personaId: string;
+  account: Account;
+  persona: Persona;
   threadId: string;
   content: string;
   dateCreated: string;
   dateUpdated: string;
 };
 
-export type ApiPost = {
+export type PostFlat = {
   id: string;
-  account: Account;
-  persona: Persona;
+  accountId: string;
+  personaId: string;
   threadId: string;
   content: string;
   dateCreated: string;

@@ -6,7 +6,7 @@ import { AsyncButton } from '../../components/AsyncButton';
 import { fetchSingleThread, selectActiveThread } from './threadSlice';
 import { fetchPostList, selectPostList } from '../posts/postSlice';
 import { SortMethod, SortOrder } from '../../enums';
-import { Post, Poster } from '../posts';
+import { Post, Poster, PostFlat } from '../posts';
 import { useCallback } from 'react';
 import { useBoolean } from 'usehooks-ts';
 import { Button, Card, Text, Image, View, XStack, Paragraph } from 'tamagui';
@@ -15,13 +15,13 @@ import { Account } from '../accounts';
 
 const pageSize: number = 10;
 
-export function PostComponent({ accountId, personaId, content }: Post) {
+export function PostComponent({ accountId, personaId, content }: PostFlat) {
   const account: Account = useAppSelector(
-    state => state.accounts.data[accountId],
+    state => state.accounts.byId[accountId],
   );
 
   const persona: Persona = useAppSelector(
-    state => state.personas.data[personaId],
+    state => state.personas.byId[personaId],
   );
 
   return (
@@ -51,6 +51,8 @@ export function Thread({ id }: ThreadProps) {
   const dispatch = useAppDispatch();
   const thread = useAppSelector(selectActiveThread);
   const posts = useAppSelector(selectPostList);
+
+  console.log(posts);
 
   const {
     value: isLoadingThreadData,
