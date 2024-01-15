@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { Image } from 'react-native';
 import { Thread } from '../../features/threads/threadSlice';
-import { Post, Poster } from '../../features/posts';
+import { ApiPost, Post, Poster } from '../../features/posts';
 import { getRandomElement } from '../../utils';
 import { Account } from '../../features/accounts';
 import { Persona } from '../../features/personas';
@@ -18,6 +18,10 @@ export const fakeAccounts: Account[] = [
   {
     id: 'ff9020841ffbe9ac51cac536206f37a2',
     email: 'seriousdeerious@gmail.com',
+  },
+  {
+    id: '6c30cd3b855d4a65f63db65956d3a598',
+    email: 'dguy1337@outlook.com',
   },
 ];
 
@@ -46,14 +50,14 @@ export const fakePersonas: Persona[] = [
     avatar: '/default-avatars/seriousdeer.jpg',
   },
   {
-    id: 'd1327618f29b1247e490324f95c4333e',
-    ownerAccountId: 'ff9020841ffbe9ac51cac536206f37a2',
+    id: 'd108c1afb6a252b57538683480e4efd8',
+    ownerAccountId: '6c30cd3b855d4a65f63db65956d3a598',
     displayName: 'D-Guy',
     avatar: '/default-avatars/dguy.jpg',
   },
   {
     id: '32f8a53245b2e51be086dd2207d67397',
-    ownerAccountId: 'ff9020841ffbe9ac51cac536206f37a2',
+    ownerAccountId: '709d68522b56b5a66658d2190a72d5bd',
     displayName: 'Artie Smartie',
     avatar: '/default-avatars/artiesmartie.jpg',
   },
@@ -98,7 +102,7 @@ export const generateFillerPosts = (
       account: poster.account,
       persona: poster.persona,
       content: faker.lorem.paragraphs(),
-    };
+    } as ApiPost;
   }).sort((a, b) => parseInt(b.dateCreated, 10) - parseInt(a.dateCreated, 10)); // Sort by date
 };
 

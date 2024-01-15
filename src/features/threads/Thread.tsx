@@ -29,6 +29,7 @@ export function PostComponent({ accountId, personaId, content }: Post) {
       <XStack gap="$6" flex={1}>
         <View width={200}>
           <Text fontWeight="700">{persona.displayName}</Text>
+          <Text>{account.email}</Text>
           {persona.avatar && (
             <Image source={{ uri: persona.avatar, width: 150, height: 150 }} />
           )}
