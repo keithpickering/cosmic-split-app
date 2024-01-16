@@ -4,14 +4,28 @@ import { StyleSheet, FlatList, ListRenderItem } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { AsyncButton } from '../../components/AsyncButton';
 import { fetchSingleThread, selectActiveThread } from './threadSlice';
-import { fetchPostList, selectPostList } from '../posts/postSlice';
+import {
+  createNewPost,
+  fetchPostList,
+  selectPostList,
+} from '../posts/postSlice';
 import { SortMethod, SortOrder } from '../../enums';
 import { Post, Poster, PostFlat } from '../posts';
 import { useCallback } from 'react';
 import { useBoolean } from 'usehooks-ts';
-import { Button, Card, Text, Image, View, XStack, Paragraph } from 'tamagui';
+import {
+  Button,
+  Card,
+  Text,
+  Image,
+  View,
+  XStack,
+  Paragraph,
+  Input,
+} from 'tamagui';
 import { Persona } from '../personas';
 import { Account } from '../accounts';
+import { fakeAccounts, fakePersonas } from '../../mocks/data';
 
 const pageSize: number = 10;
 
@@ -52,7 +66,7 @@ export function Thread({ id }: ThreadProps) {
   const thread = useAppSelector(selectActiveThread);
   const posts = useAppSelector(selectPostList);
 
-  console.log(posts);
+  const [newPostContent, setNewPostContent] = useState('');
 
   const {
     value: isLoadingThreadData,
@@ -64,6 +78,12 @@ export function Thread({ id }: ThreadProps) {
     value: isLoadingMorePosts,
     setTrue: setLoadingMorePostsTrue,
     setFalse: setLoadingMorePostsFalse,
+  } = useBoolean(false);
+
+  const {
+    value: isSubmittingNewPost,
+    setTrue: setSubmittingNewPostTrue,
+    setFalse: setSubmittingNewPostFalse,
   } = useBoolean(false);
 
   /**
@@ -95,7 +115,7 @@ export function Thread({ id }: ThreadProps) {
     }
     try {
       setLoadingMorePostsTrue();
-      const nextPosts: Post[] = await dispatch(
+      await dispatch(
         fetchPostList({
           params: {
             threadId: id,
@@ -110,6 +130,30 @@ export function Thread({ id }: ThreadProps) {
       //
     } finally {
       setLoadingMorePostsFalse();
+    }
+  };
+
+  const submitNewPost = async () => {
+    if (isSubmittingNewPost) {
+      return;
+    }
+    try {
+      setSubmittingNewPostTrue();
+      await dispatch(
+        createNewPost({
+          postData: {
+            threadId: 'test',
+            accountId: fakeAccounts[0].id,
+            personaId: fakePersonas[0].id,
+            content: newPostContent,
+          },
+          token: 'testToken',
+        }),
+      );
+    } catch (error) {
+      //
+    } finally {
+      setSubmittingNewPostFalse();
     }
   };
 
@@ -132,7 +176,7 @@ export function Thread({ id }: ThreadProps) {
    * Render a single post
    * @returns {React.JSX.Element}
    */
-  const renderPost: ListRenderItem<Post> = ({ item }) => {
+  const renderPost: ListRenderItem<PostFlat> = ({ item }) => {
     return <PostComponent {...item} />;
   };
 
@@ -144,7 +188,7 @@ export function Thread({ id }: ThreadProps) {
     return (
       <FlatList
         data={posts}
-        keyExtractor={(item: Post) => item.id}
+        keyExtractor={(item: PostFlat) => item.id}
         renderItem={renderPost}
       />
     );
@@ -154,6 +198,15 @@ export function Thread({ id }: ThreadProps) {
     <View padding="$6" paddingHorizontal="$10">
       {renderPosts()}
       <Button onPress={loadMorePosts}>Load more</Button>
+      <XStack>
+        <Input
+          flex={1}
+          placeholder="What do you think?"
+          value={newPostContent}
+          onChangeText={setNewPostContent}
+        />
+        <Button onPress={submitNewPost}>Send</Button>
+      </XStack>
     </View>
   );
 }

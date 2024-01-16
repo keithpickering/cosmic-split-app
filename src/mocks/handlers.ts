@@ -1,11 +1,18 @@
 import { http, delay, RequestHandler, HttpResponse } from 'msw';
 import { faker } from '@faker-js/faker';
-import { Thread } from '../features/threads/threadSlice';
+import { Thread } from '../features/threads';
 import { API_BASE_URL } from '../api';
-import { generateFillerPosts, generateFillerThread } from './data';
+import {
+  fakeAccounts,
+  fakePersonas,
+  fakePosters,
+  generateFillerPosts,
+  generateFillerThread,
+} from './data';
+import { Post, PostFlat, PostInput } from '../features/posts';
 
 const mockThreadId = faker.string.uuid();
-const mockPosts = generateFillerPosts(undefined, 100);
+const mockPosts = generateFillerPosts(undefined, 25);
 console.log(mockPosts);
 
 export const handlers: RequestHandler[] = [
@@ -37,4 +44,22 @@ export const handlers: RequestHandler[] = [
     }
     return HttpResponse.json(paginatedPosts);
   }),
+
+  // Handles a POST request to add a new post to a thread
+  http.post<PostInput, PostInput>(
+    `${API_BASE_URL}/posts`,
+    async ({ request }) => {
+      const { content, threadId, accountId, personaId } = await request.json();
+      const account = fakeAccounts.find(({ id }) => id === accountId);
+      const persona = fakePersonas.find(({ id }) => id === personaId);
+      return HttpResponse.json({
+        id: faker.string.uuid(),
+        account,
+        persona,
+        content,
+        threadId,
+        dateCreated: new Date().toISOString(),
+      } as Post);
+    },
+  ),
 ];

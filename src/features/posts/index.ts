@@ -28,7 +28,7 @@ export type Poster = {
  * @property {string} threadId - Identifier for the thread the post belongs to.
  * @property {string} content - The actual content of the post.
  * @property {string} dateCreated - The ISO string date when the post was created.
- * @property {string} dateUpdated - The ISO string date when the post was last updated.
+ * @property {string} dateUpdated - The ISO string date when the post was last updated (optional)
  */
 export type Post = {
   id: string;
@@ -37,7 +37,7 @@ export type Post = {
   threadId: string;
   content: string;
   dateCreated: string;
-  dateUpdated: string;
+  dateUpdated?: string;
 };
 
 export type PostFlat = {
@@ -47,7 +47,7 @@ export type PostFlat = {
   threadId: string;
   content: string;
   dateCreated: string;
-  dateUpdated: string;
+  dateUpdated?: string;
 };
 
 /**

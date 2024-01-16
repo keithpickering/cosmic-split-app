@@ -161,15 +161,17 @@ const postSlice = createSlice({
         state.hasMore = true;
         state.status = AsyncStatus.IDLE;
       })
+
       // Handling fetchPostList
       .addCase(fetchPostList.pending, state => {
         state.status = AsyncStatus.LOADING;
       })
       .addCase(fetchPostList.fulfilled, (state, action) => {
-        // Flatten post data, abstracting repeated data by ID.
-        // This effect should also be handled in extraReducers for related
-        // slices, to ensure the abstracted data can be referenced in Redux by ID.
+        // Add fetched posts to the data store
         state.allIds.push(
+          // Flatten post data, abstracting repeated data by ID.
+          // This effect should also be handled in extraReducers for related
+          // slices, to ensure the abstracted data can be referenced in Redux.
           ...action.payload.reduce((allIds: string[], post: Post) => {
             const flattenedPost: PostFlat = {
               id: post.id,
@@ -180,7 +182,9 @@ const postSlice = createSlice({
               dateCreated: post.dateCreated,
               dateUpdated: post.dateUpdated,
             };
+            // Add flattened post to byId object
             state.byId[flattenedPost.id] = flattenedPost;
+            // Add post ID to allIds array
             allIds.push(flattenedPost.id);
             return allIds;
           }, []),
@@ -189,6 +193,48 @@ const postSlice = createSlice({
         state.status = AsyncStatus.SUCCEEDED;
       })
       .addCase(fetchPostList.rejected, state => {
+        state.status = AsyncStatus.FAILED;
+      })
+
+      // Handling createNewPost
+      .addCase(createNewPost.pending, state => {
+        state.status = AsyncStatus.LOADING;
+      })
+      .addCase(createNewPost.fulfilled, (state, action) => {
+        const newPost = action.payload;
+        const flattenedPost: PostFlat = {
+          id: newPost.id,
+          threadId: newPost.threadId,
+          content: newPost.content,
+          personaId: newPost.persona.id,
+          accountId: newPost.account.id,
+          dateCreated: newPost.dateCreated,
+          dateUpdated: newPost.dateUpdated,
+        };
+        state.byId[newPost.id] = flattenedPost;
+        state.allIds.push(newPost.id);
+        state.status = AsyncStatus.SUCCEEDED;
+      })
+      .addCase(createNewPost.rejected, state => {
+        state.status = AsyncStatus.FAILED;
+      })
+
+      // Handling editPost
+      .addCase(editPost.pending, state => {
+        state.status = AsyncStatus.LOADING;
+      })
+      .addCase(editPost.fulfilled, (state, action) => {
+        const updatedPost: Post = action.payload;
+        if (state.byId[updatedPost.id]) {
+          state.byId[updatedPost.id] = {
+            ...state.byId[updatedPost.id],
+            content: updatedPost.content,
+            dateUpdated: updatedPost.dateUpdated,
+          };
+          state.status = AsyncStatus.SUCCEEDED;
+        }
+      })
+      .addCase(editPost.rejected, state => {
         state.status = AsyncStatus.FAILED;
       });
   },
