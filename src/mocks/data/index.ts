@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Thread } from '../../features/threads/threadSlice';
+import { Thread } from '../../features/threads';
 import { Post, PostFlat, Poster } from '../../features/posts';
 import { Account } from '../../features/accounts';
 import { Persona } from '../../features/personas';
@@ -104,13 +104,11 @@ export const generateFillerPosts = (
   }).sort((a, b) => parseInt(b.dateCreated, 10) - parseInt(a.dateCreated, 10)); // Sort by date
 };
 
-export const generateFillerThread = (
-  id: string,
-  shouldIncludePosts: boolean = false,
-) =>
+export const generateFillerThread = (id: string, postCount: number = 25) =>
   ({
     id,
     title: 'Mocked Thread Title',
-    originalPosterAccountId: 'accountId1',
-    originalPosterPersonaId: 'personaId1',
+    originalPosterAccountId: fakeAccounts[0].id,
+    originalPosterPersonaId: fakePersonas[0].id,
+    postCount,
   } as Thread);

@@ -1,9 +1,9 @@
-import { PaginationRequest } from "../../interfaces";
-import { Post } from "../posts";
+import { PaginationRequest } from '../../interfaces';
+import { Post } from '../posts';
 
 /**
  * Represents a thread, or a collection of posts.
- * 
+ *
  * @export
  * @type Thread
  * @typedef {Object} Thread
@@ -17,11 +17,12 @@ export type Thread = {
   originalPosterAccountId: string;
   originalPosterPersonaId: string;
   title: string;
-}
+  postCount?: number;
+};
 
 /**
  * Represents the input data required for creating or updating a thread.
- * 
+ *
  * @export
  * @type ThreadInput
  * @typedef {Object} ThreadInput
@@ -35,7 +36,7 @@ export type ThreadInput = {
   accountId: string;
   personaId: string;
   content?: string;
-}
+};
 
 /**
  * Represents a request to fetch threads, including pagination parameters and optional forum identifier.

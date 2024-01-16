@@ -3,9 +3,9 @@ import { AsyncStatus } from '../../enums';
 import { Post } from '../posts';
 import { fetchWithAuth } from '../../api';
 import { FetchThreadsRequest, ThreadInput } from '.';
-import { fetchPostList } from '../posts/postSlice';
+import { createNewPost, fetchPostList } from '../posts/postSlice';
 import { RootState } from '../../store';
-import { Thread } from './Thread';
+import { Thread } from '.';
 
 /**
  * Async thunk for fetching a single thread (public or private) by its ID.
@@ -122,39 +122,33 @@ export const editThread = createAsyncThunk(
   },
 );
 
+type ThreadsKeyed = {
+  [byId: string]: Thread;
+};
 interface ThreadState {
-  status: AsyncStatus;
-  activeThread: Thread | null;
+  byId: ThreadsKeyed;
 }
 
 const initialState: ThreadState = {
-  status: AsyncStatus.IDLE,
-  activeThread: null,
+  byId: {},
 };
 
 const threadSlice = createSlice({
-  name: 'thread',
+  name: 'threads',
   initialState,
   reducers: {},
   extraReducers: builder => {
     builder
-      // Handling fetchSingleThread
-      .addCase(fetchSingleThread.pending, state => {
-        state.activeThread = null;
-        state.status = AsyncStatus.LOADING;
-      })
       .addCase(fetchSingleThread.fulfilled, (state, action) => {
-        state.activeThread = action.payload;
-        state.status = AsyncStatus.SUCCEEDED;
+        const thread: Thread = action.payload;
+        state.byId[thread.id] = thread;
       })
-      .addCase(fetchSingleThread.rejected, state => {
-        state.status = AsyncStatus.FAILED;
+      .addCase(createNewPost.fulfilled, (state, action) => {
+        const latestPostCount: number = action.payload.latestPostCount;
+        const threadId: string = action.payload.post.threadId;
+        state.byId[threadId].postCount = latestPostCount;
       });
   },
 });
-
-export const selectActiveThread = (state: RootState) => {
-  return state.thread;
-};
 
 export default threadSlice.reducer;

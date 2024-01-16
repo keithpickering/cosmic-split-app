@@ -137,6 +137,19 @@ const initialState: PostState = {
   hasMore: true,
 };
 
+const flattenPost = (post: Post) => {
+  const flattenedPost: PostFlat = {
+    id: post.id,
+    threadId: post.threadId,
+    content: post.content,
+    personaId: post.persona.id, // Flattened persona
+    accountId: post.account.id, // Flattened account
+    dateCreated: post.dateCreated,
+    dateUpdated: post.dateUpdated,
+  };
+  return flattenedPost;
+};
+
 const postSlice = createSlice({
   name: 'posts',
   initialState,
@@ -152,43 +165,31 @@ const postSlice = createSlice({
       state.hasMore = true;
       state.status = AsyncStatus.IDLE;
     },
+    addPostToState: (state, action) => {
+      const post: Post = action.payload;
+      const flattenedPost = flattenPost(post);
+      state.byId[flattenedPost.id] = flattenedPost;
+    },
   },
   extraReducers: builder => {
     builder
-      // Handling fetchSingleThread
+      // Reset post list when a new thread is requested
       .addCase(fetchSingleThread.pending, state => {
         state.allIds = [];
         state.hasMore = true;
         state.status = AsyncStatus.IDLE;
       })
 
-      // Handling fetchPostList
+      // Handle a list of posts being fetched
       .addCase(fetchPostList.pending, state => {
         state.status = AsyncStatus.LOADING;
       })
       .addCase(fetchPostList.fulfilled, (state, action) => {
-        // Add fetched posts to the data store
-        state.allIds.push(
-          // Flatten post data, abstracting repeated data by ID.
-          // This effect should also be handled in extraReducers for related
-          // slices, to ensure the abstracted data can be referenced in Redux.
-          ...action.payload.reduce((allIds: string[], post: Post) => {
-            const flattenedPost: PostFlat = {
-              id: post.id,
-              threadId: post.threadId,
-              content: post.content,
-              personaId: post.persona.id, // Flattened persona
-              accountId: post.account.id, // Flattened account
-              dateCreated: post.dateCreated,
-              dateUpdated: post.dateUpdated,
-            };
-            // Add flattened post to byId object
-            state.byId[flattenedPost.id] = flattenedPost;
-            // Add post ID to allIds array
-            allIds.push(flattenedPost.id);
-            return allIds;
-          }, []),
-        );
+        action.payload.reduce((byId: PostsKeyed, post: Post) => {
+          const flattenedPost = flattenPost(post);
+          byId[flattenedPost.id] = flattenedPost;
+          return byId;
+        }, state.byId);
         state.hasMore = action.payload.length > 0;
         state.status = AsyncStatus.SUCCEEDED;
       })
@@ -196,30 +197,22 @@ const postSlice = createSlice({
         state.status = AsyncStatus.FAILED;
       })
 
-      // Handling createNewPost
-      .addCase(createNewPost.pending, state => {
+      // Handle a new post being created
+      /* .addCase(createNewPost.pending, state => {
         state.status = AsyncStatus.LOADING;
       })
       .addCase(createNewPost.fulfilled, (state, action) => {
-        const newPost = action.payload;
-        const flattenedPost: PostFlat = {
-          id: newPost.id,
-          threadId: newPost.threadId,
-          content: newPost.content,
-          personaId: newPost.persona.id,
-          accountId: newPost.account.id,
-          dateCreated: newPost.dateCreated,
-          dateUpdated: newPost.dateUpdated,
-        };
-        state.byId[newPost.id] = flattenedPost;
-        state.allIds.push(newPost.id);
+        const post: Post = action.payload.post;
+        const flattenedPost = flattenPost(post);
+        state.byId[post.id] = flattenedPost;
+        //state.allIds.push(post.id);
         state.status = AsyncStatus.SUCCEEDED;
       })
       .addCase(createNewPost.rejected, state => {
         state.status = AsyncStatus.FAILED;
       })
 
-      // Handling editPost
+      // Handle an existing post being edited
       .addCase(editPost.pending, state => {
         state.status = AsyncStatus.LOADING;
       })
@@ -236,16 +229,24 @@ const postSlice = createSlice({
       })
       .addCase(editPost.rejected, state => {
         state.status = AsyncStatus.FAILED;
-      });
+      }); */
   },
 });
 
-export const { resetPostList, clearAllPostData } = postSlice.actions;
+// Export actions
+export const { resetPostList, addPostToState, clearAllPostData } =
+  postSlice.actions;
 
+/**
+ * Select the list of post objects in current state order
+ */
 export const selectPostList = (state: RootState) => {
   return state.posts.allIds.map(id => state.posts.byId[id]);
 };
 
+/**
+ * Select a specific post in the store by its ID
+ */
 export const selectPostById = (id: string) => (state: RootState) => {
   if (!id) {
     return null;

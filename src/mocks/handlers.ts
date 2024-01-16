@@ -11,9 +11,7 @@ import {
 } from './data';
 import { Post, PostFlat, PostInput } from '../features/posts';
 
-const mockThreadId = faker.string.uuid();
-const mockPosts = generateFillerPosts(undefined, 25);
-console.log(mockPosts);
+const mockPosts = generateFillerPosts(undefined, 100);
 
 export const handlers: RequestHandler[] = [
   // Handles a GET request to fetch a single thread
@@ -21,7 +19,10 @@ export const handlers: RequestHandler[] = [
     const { threadId } = params;
 
     // Mock response data as per the Thread type
-    const mockThread: Thread = generateFillerThread(threadId.toString());
+    const mockThread: Thread = generateFillerThread(
+      threadId.toString(),
+      mockPosts.length,
+    );
 
     return HttpResponse.json(mockThread);
   }),
@@ -40,7 +41,7 @@ export const handlers: RequestHandler[] = [
       paginatedPosts = paginatedPosts.map(post => ({ ...post, threadId }));
     }
     if (process.env.NODE_ENV !== 'test') {
-      await delay(1000);
+      await delay();
     }
     return HttpResponse.json(paginatedPosts);
   }),
@@ -52,14 +53,26 @@ export const handlers: RequestHandler[] = [
       const { content, threadId, accountId, personaId } = await request.json();
       const account = fakeAccounts.find(({ id }) => id === accountId);
       const persona = fakePersonas.find(({ id }) => id === personaId);
-      return HttpResponse.json({
+      const newPost = {
         id: faker.string.uuid(),
         account,
         persona,
         content,
         threadId,
         dateCreated: new Date().toISOString(),
-      } as Post);
+      } as Post;
+      mockPosts.push(newPost);
+      if (process.env.NODE_ENV !== 'test') {
+        await delay();
+      }
+      const indexInThread = mockPosts.indexOf(newPost);
+      const latestPostCount = mockPosts.length;
+      return HttpResponse.json({
+        post: newPost,
+        indexInThread,
+        latestPostCount,
+        pageInThread: Math.ceil((indexInThread + 1) / 10),
+      });
     },
   ),
 ];

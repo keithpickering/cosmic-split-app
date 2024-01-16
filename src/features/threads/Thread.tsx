@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { StyleSheet, FlatList, ListRenderItem } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { AsyncButton } from '../../components/AsyncButton';
-import { fetchSingleThread, selectActiveThread } from './threadSlice';
+import { fetchSingleThread } from './threadSlice';
 import {
-  createNewPost,
-  fetchPostList,
-  selectPostList,
-} from '../posts/postSlice';
+  selectActiveThread,
+  selectActiveThreadPage,
+  selectActiveThreadPosts,
+} from '../activeThread/activeThreadSlice';
+import { addPostToState, createNewPost, fetchPostList } from '../posts/postSlice';
 import { SortMethod, SortOrder } from '../../enums';
 import { Post, Poster, PostFlat } from '../posts';
 import { useCallback } from 'react';
@@ -64,7 +65,13 @@ export type ThreadProps = {
 export function Thread({ id }: ThreadProps) {
   const dispatch = useAppDispatch();
   const thread = useAppSelector(selectActiveThread);
-  const posts = useAppSelector(selectPostList);
+  const activePage = useAppSelector(selectActiveThreadPage);
+  const posts = useAppSelector(selectActiveThreadPosts);
+
+  const pageCount = useMemo(
+    () => (thread?.postCount ? Math.ceil(thread.postCount / pageSize) : 0),
+    [thread?.postCount],
+  );
 
   const [newPostContent, setNewPostContent] = useState('');
 
@@ -133,16 +140,98 @@ export function Thread({ id }: ThreadProps) {
     }
   };
 
+  /**
+   * Load a specific page of posts
+   * @param page The desired page to load
+   */
+  const loadPage = async (page: number) => {
+    if (isLoadingMorePosts) {
+      return;
+    }
+    try {
+      setLoadingMorePostsTrue();
+      await dispatch(
+        fetchPostList({
+          params: {
+            threadId: id,
+            pageSize,
+            skipCount: pageSize * (page - 1), // page is 1-based index
+            sortMethod: SortMethod.DATE,
+            sortOrder: SortOrder.ASC,
+          },
+        }),
+      );
+    } catch (error) {
+      //
+    } finally {
+      setLoadingMorePostsFalse();
+    }
+  };
+
+  /**
+   * Load the oldest page of posts
+   */
+  const loadFirstPage = async () => {
+    if (isLoadingMorePosts) {
+      return;
+    }
+    try {
+      setLoadingMorePostsTrue();
+      await dispatch(
+        fetchPostList({
+          params: {
+            threadId: id,
+            pageSize,
+            skipCount: 0,
+            sortMethod: SortMethod.DATE,
+            sortOrder: SortOrder.ASC,
+          },
+        }),
+      );
+    } catch (error) {
+      //
+    } finally {
+      setLoadingMorePostsFalse();
+    }
+  };
+
+  /**
+   * Load the newest page of posts
+   */
+  const loadLastPage = async () => {
+    if (isLoadingMorePosts) {
+      return;
+    }
+    try {
+      setLoadingMorePostsTrue();
+      await dispatch(
+        fetchPostList({
+          params: {
+            threadId: id,
+            pageSize,
+            skipCount: pageSize * (pageCount - 1), // page is 1-based index
+            sortMethod: SortMethod.DATE,
+            sortOrder: SortOrder.ASC,
+          },
+        }),
+      );
+    } catch (error) {
+      //
+    } finally {
+      setLoadingMorePostsFalse();
+    }
+  };
+
   const submitNewPost = async () => {
-    if (isSubmittingNewPost) {
+    if (isSubmittingNewPost || !thread?.id) {
       return;
     }
     try {
       setSubmittingNewPostTrue();
-      await dispatch(
+      const { payload } = await dispatch(
         createNewPost({
           postData: {
-            threadId: 'test',
+            threadId: thread.id,
             accountId: fakeAccounts[0].id,
             personaId: fakePersonas[0].id,
             content: newPostContent,
@@ -150,6 +239,7 @@ export function Thread({ id }: ThreadProps) {
           token: 'testToken',
         }),
       );
+      await loadPage(payload.pageInThread);
     } catch (error) {
       //
     } finally {
@@ -194,10 +284,52 @@ export function Thread({ id }: ThreadProps) {
     );
   };
 
+  const renderPagination = () => {
+    const isFirstPage = activePage === 1;
+    const isLastPage = activePage === pageCount;
+    return (
+      <XStack>
+        <Button
+          disabled={isFirstPage}
+          opacity={isFirstPage ? 0.5 : 1}
+          theme={isFirstPage ? 'active' : undefined}
+          variant={isFirstPage ? undefined : 'outlined'}
+          onPress={loadFirstPage}>
+          &lt;&lt;
+        </Button>
+        {Array.from({ length: pageCount }, (_, i) => i + 1).map(
+          (page: number) => {
+            const isActivePage = activePage === page;
+            return (
+              <Button
+                key={page}
+                disabled={isActivePage}
+                opacity={isActivePage ? 0.5 : 1}
+                theme={isActivePage ? 'active' : undefined}
+                variant={isActivePage ? undefined : 'outlined'}
+                onPress={() => loadPage(page)}>
+                {page}
+              </Button>
+            );
+          },
+        )}
+        <Button
+          disabled={isLastPage}
+          opacity={isLastPage ? 0.5 : 1}
+          theme={isLastPage ? 'active' : undefined}
+          variant={isLastPage ? undefined : 'outlined'}
+          onPress={loadLastPage}>
+          &gt;&gt;
+        </Button>
+      </XStack>
+    );
+  };
+
   return (
     <View padding="$6" paddingHorizontal="$10">
+      {renderPagination()}
       {renderPosts()}
-      <Button onPress={loadMorePosts}>Load more</Button>
+      {renderPagination()}
       <XStack>
         <Input
           flex={1}
