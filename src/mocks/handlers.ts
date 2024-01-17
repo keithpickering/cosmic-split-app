@@ -13,10 +13,34 @@ import { Post, PostFlat, PostInput } from '../features/posts';
 
 const mockPosts = generateFillerPosts(undefined, 100);
 
+const addAnotherMockPost = (threadId: string) => {
+  const incidentalPersona = faker.helpers.arrayElement(fakePersonas);
+  const incidentalAccount = fakeAccounts.find(
+    ({ id }) => id === incidentalPersona.ownerAccountId,
+  );
+  const incidentalNewPost = {
+    id: faker.string.uuid(),
+    account: incidentalAccount,
+    persona: incidentalPersona,
+    content: faker.lorem.paragraphs(),
+    threadId,
+    dateCreated: new Date().toISOString(),
+  } as Post;
+  mockPosts.push(incidentalNewPost);
+};
+
 export const handlers: RequestHandler[] = [
   // Handles a GET request to fetch a single thread
   http.get(`${API_BASE_URL}/threads/:threadId`, ({ params }) => {
     const { threadId } = params;
+
+    // Mock the possibility that a new post has been added since the last request
+    faker.helpers.maybe(() => {
+      addAnotherMockPost(threadId.toString());
+      faker.helpers.maybe(() => {
+        addAnotherMockPost(threadId.toString());
+      });
+    });
 
     // Mock response data as per the Thread type
     const mockThread: Thread = generateFillerThread(
@@ -54,19 +78,7 @@ export const handlers: RequestHandler[] = [
       const account = fakeAccounts.find(({ id }) => id === accountId);
       const persona = fakePersonas.find(({ id }) => id === personaId);
       faker.helpers.maybe(() => {
-        const incidentalPersona = faker.helpers.arrayElement(fakePersonas);
-        const incidentalAccount = fakeAccounts.find(
-          ({ id }) => id === incidentalPersona.ownerAccountId,
-        );
-        const incidentalNewPost = {
-          id: faker.string.uuid(),
-          account: incidentalAccount,
-          persona: incidentalPersona,
-          content: 'Dude I made this post too fast for you',
-          threadId,
-          dateCreated: new Date().toISOString(),
-        } as Post;
-        mockPosts.push(incidentalNewPost);
+        addAnotherMockPost(threadId);
         faker.helpers.maybe(() => {
           const incidentalPersona2 = faker.helpers.arrayElement(fakePersonas);
           const incidentalAccount2 = fakeAccounts.find(
