@@ -25,14 +25,27 @@ const initialState: ActiveThreadState = {
 const threadSlice = createSlice({
   name: 'threads',
   initialState,
-  reducers: {},
+  reducers: {
+    clearActiveThread: state => {
+      state.threadId = undefined;
+      state.activePage = 1;
+      state.postIds = [];
+    },
+    setActiveThreadPostIds: (state, action) => {
+      state.postIds = action.payload;
+    },
+    appendActiveThreadPostIds: (state, action) => {
+      state.postIds.push(...action.payload);
+    },
+    setActiveThreadPage: (state, action) => {
+      state.activePage = action.payload;
+    },
+  },
   extraReducers: builder => {
     builder
       // Handling fetchSingleThread
       .addCase(fetchSingleThread.pending, state => {
-        state.threadId = undefined;
         state.status = AsyncStatus.LOADING;
-        state.activePage = 1;
       })
       .addCase(fetchSingleThread.fulfilled, (state, action) => {
         state.threadId = action.payload.id;
@@ -40,8 +53,8 @@ const threadSlice = createSlice({
       })
       .addCase(fetchSingleThread.rejected, state => {
         state.status = AsyncStatus.FAILED;
-      })
-      .addCase(fetchPostList.fulfilled, (state, action) => {
+      });
+    /*.addCase(fetchPostList.fulfilled, (state, action) => {
         // Don't bother if no active thread
         if (!state.threadId) {
           return;
@@ -51,9 +64,16 @@ const threadSlice = createSlice({
         state.activePage = Math.ceil(skipCount / pageSize + 1);
         // Add fetched posts to the data store
         state.postIds = action.payload.map((post: Post) => post.id);
-      });
+      });*/
   },
 });
+
+export const {
+  clearActiveThread,
+  setActiveThreadPostIds,
+  appendActiveThreadPostIds,
+  setActiveThreadPage,
+} = threadSlice.actions;
 
 export const selectActiveThread = (state: RootState) => {
   const activeThreadId = state.activeThread.threadId;

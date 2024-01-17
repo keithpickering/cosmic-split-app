@@ -5,11 +5,18 @@ import { useAppDispatch, useAppSelector } from '../../hooks';
 import { AsyncButton } from '../../components/AsyncButton';
 import { fetchSingleThread } from './threadSlice';
 import {
+  appendActiveThreadPostIds,
   selectActiveThread,
   selectActiveThreadPage,
   selectActiveThreadPosts,
+  setActiveThreadPage,
+  setActiveThreadPostIds,
 } from '../activeThread/activeThreadSlice';
-import { addPostToState, createNewPost, fetchPostList } from '../posts/postSlice';
+import {
+  addPostToState,
+  createNewPost,
+  fetchPostList,
+} from '../posts/postSlice';
 import { SortMethod, SortOrder } from '../../enums';
 import { Post, Poster, PostFlat } from '../posts';
 import { useCallback } from 'react';
@@ -23,10 +30,12 @@ import {
   XStack,
   Paragraph,
   Input,
+  YStack,
 } from 'tamagui';
 import { Persona } from '../personas';
 import { Account } from '../accounts';
 import { fakeAccounts, fakePersonas } from '../../mocks/data';
+import { Thread } from '.';
 
 const pageSize: number = 10;
 
@@ -62,7 +71,7 @@ export type ThreadProps = {
   id: string | undefined;
 };
 
-export function Thread({ id }: ThreadProps) {
+export function ThreadComponent({ id }: ThreadProps) {
   const dispatch = useAppDispatch();
   const thread = useAppSelector(selectActiveThread);
   const activePage = useAppSelector(selectActiveThreadPage);
@@ -105,7 +114,10 @@ export function Thread({ id }: ThreadProps) {
       if (!id) {
         throw new Error();
       }
-      dispatch(fetchSingleThread({ threadId: id }));
+      const { payload }: { payload: Thread } = await dispatch(
+        fetchSingleThread({ threadId: id }),
+      );
+      return payload;
     } catch (error) {
       //
     } finally {
@@ -150,7 +162,7 @@ export function Thread({ id }: ThreadProps) {
     }
     try {
       setLoadingMorePostsTrue();
-      await dispatch(
+      const { payload: newPosts }: { payload: PostFlat[] } = await dispatch(
         fetchPostList({
           params: {
             threadId: id,
@@ -161,6 +173,8 @@ export function Thread({ id }: ThreadProps) {
           },
         }),
       );
+      dispatch(setActiveThreadPostIds(newPosts.map(post => post.id)));
+      dispatch(setActiveThreadPage(page));
     } catch (error) {
       //
     } finally {
@@ -172,49 +186,58 @@ export function Thread({ id }: ThreadProps) {
    * Load the oldest page of posts
    */
   const loadFirstPage = async () => {
-    if (isLoadingMorePosts) {
-      return;
-    }
-    try {
-      setLoadingMorePostsTrue();
-      await dispatch(
-        fetchPostList({
-          params: {
-            threadId: id,
-            pageSize,
-            skipCount: 0,
-            sortMethod: SortMethod.DATE,
-            sortOrder: SortOrder.ASC,
-          },
-        }),
-      );
-    } catch (error) {
-      //
-    } finally {
-      setLoadingMorePostsFalse();
-    }
+    return loadPage(1);
   };
 
   /**
    * Load the newest page of posts
    */
   const loadLastPage = async () => {
-    if (isLoadingMorePosts) {
+    return loadPage(pageCount);
+  };
+
+  const checkForMorePosts = async () => {
+    if (isLoadingMorePosts || !thread?.id) {
       return;
     }
     try {
       setLoadingMorePostsTrue();
-      await dispatch(
+      /* await dispatch(
+        createNewPost({
+          postData: {
+            threadId: thread.id,
+            accountId: fakeAccounts[0].id,
+            personaId: fakePersonas[0].id,
+            content: 'fake fake fake',
+          },
+          token: 'testToken',
+        }),
+      ); */
+      const latestThreadData = await loadThreadData();
+      if (!latestThreadData?.postCount) {
+        throw new Error();
+      }
+      const newPostCount = latestThreadData.postCount - posts.length;
+      const skipCount = (activePage - 1) * pageSize + posts.length;
+      const newPageCount = Math.ceil(latestThreadData.postCount / pageSize);
+      const { payload: newPosts }: { payload: PostFlat[] } = await dispatch(
         fetchPostList({
           params: {
             threadId: id,
-            pageSize,
-            skipCount: pageSize * (pageCount - 1), // page is 1-based index
+            pageSize: newPostCount,
+            skipCount,
             sortMethod: SortMethod.DATE,
             sortOrder: SortOrder.ASC,
           },
         }),
       );
+      // If page count has changed, go to the new page
+      if (pageCount !== newPageCount) {
+        loadPage(newPageCount);
+        return;
+      }
+      // Otherwise just append to current page
+      dispatch(appendActiveThreadPostIds(newPosts.map(post => post.id)));
     } catch (error) {
       //
     } finally {
@@ -239,6 +262,7 @@ export function Thread({ id }: ThreadProps) {
           token: 'testToken',
         }),
       );
+      setNewPostContent('');
       await loadPage(payload.pageInThread);
     } catch (error) {
       //
@@ -257,17 +281,34 @@ export function Thread({ id }: ThreadProps) {
       // Fetch thread metadata
       loadThreadData();
       // Fetch initial page of posts
-      loadMorePosts();
+      loadFirstPage();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]),
   );
 
   /**
    * Render a single post
-   * @returns {React.JSX.Element}
+   * @returns {React.JSX.Element|null}
    */
-  const renderPost: ListRenderItem<PostFlat> = ({ item }) => {
-    return <PostComponent {...item} />;
+  const renderPost: ListRenderItem<PostFlat> = ({ item, index }) => {
+    if (!thread?.postCount) {
+      return null;
+    }
+    return (
+      <YStack>
+        <PostComponent {...item} />
+        {index === posts.length - 1 && activePage === pageCount && (
+          <View alignItems="center">
+            <XStack alignItems="center" gap="$2">
+              <Text>End of posts</Text>
+              <Button theme="active" onPress={checkForMorePosts}>
+                Check for more
+              </Button>
+            </XStack>
+          </View>
+        )}
+      </YStack>
+    );
   };
 
   /**
@@ -280,6 +321,23 @@ export function Thread({ id }: ThreadProps) {
         data={posts}
         keyExtractor={(item: PostFlat) => item.id}
         renderItem={renderPost}
+        ListHeaderComponent={
+          <YStack marginBottom="$6">{renderPagination()}</YStack>
+        }
+        ListFooterComponent={
+          <YStack gap="$6" marginTop="$6">
+            {renderPagination()}
+            <XStack gap="$2">
+              <Input
+                flex={1}
+                placeholder="What do you think?"
+                value={newPostContent}
+                onChangeText={setNewPostContent}
+              />
+              <Button onPress={submitNewPost}>Send</Button>
+            </XStack>
+          </YStack>
+        }
       />
     );
   };
@@ -288,7 +346,7 @@ export function Thread({ id }: ThreadProps) {
     const isFirstPage = activePage === 1;
     const isLastPage = activePage === pageCount;
     return (
-      <XStack>
+      <XStack gap="$2">
         <Button
           disabled={isFirstPage}
           opacity={isFirstPage ? 0.5 : 1}
@@ -326,19 +384,8 @@ export function Thread({ id }: ThreadProps) {
   };
 
   return (
-    <View padding="$6" paddingHorizontal="$10">
-      {renderPagination()}
-      {renderPosts()}
-      {renderPagination()}
-      <XStack>
-        <Input
-          flex={1}
-          placeholder="What do you think?"
-          value={newPostContent}
-          onChangeText={setNewPostContent}
-        />
-        <Button onPress={submitNewPost}>Send</Button>
-      </XStack>
+    <View padding="$6">
+      <YStack gap="$6">{renderPosts()}</YStack>
     </View>
   );
 }

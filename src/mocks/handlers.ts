@@ -53,6 +53,36 @@ export const handlers: RequestHandler[] = [
       const { content, threadId, accountId, personaId } = await request.json();
       const account = fakeAccounts.find(({ id }) => id === accountId);
       const persona = fakePersonas.find(({ id }) => id === personaId);
+      faker.helpers.maybe(() => {
+        const incidentalPersona = faker.helpers.arrayElement(fakePersonas);
+        const incidentalAccount = fakeAccounts.find(
+          ({ id }) => id === incidentalPersona.ownerAccountId,
+        );
+        const incidentalNewPost = {
+          id: faker.string.uuid(),
+          account: incidentalAccount,
+          persona: incidentalPersona,
+          content: 'Dude I made this post too fast for you',
+          threadId,
+          dateCreated: new Date().toISOString(),
+        } as Post;
+        mockPosts.push(incidentalNewPost);
+        faker.helpers.maybe(() => {
+          const incidentalPersona2 = faker.helpers.arrayElement(fakePersonas);
+          const incidentalAccount2 = fakeAccounts.find(
+            ({ id }) => id === incidentalPersona2.ownerAccountId,
+          );
+          const incidentalNewPost2 = {
+            id: faker.string.uuid(),
+            account: incidentalAccount2,
+            persona: incidentalPersona2,
+            content: 'Me too!',
+            threadId,
+            dateCreated: new Date().toISOString(),
+          } as Post;
+          mockPosts.push(incidentalNewPost2);
+        });
+      });
       const newPost = {
         id: faker.string.uuid(),
         account,

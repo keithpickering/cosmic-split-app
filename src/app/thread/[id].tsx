@@ -1,6 +1,7 @@
-import { Text, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { Thread } from "../../features/threads/Thread";
+import React from 'react';
+import { Text, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { ThreadComponent as Thread } from '../../features/threads/Thread';
 
 export default function ThreadPage() {
   const { id } = useLocalSearchParams();
@@ -8,5 +9,5 @@ export default function ThreadPage() {
     <View>
       <Thread id={id?.toString()} />
     </View>
-  )
+  );
 }
