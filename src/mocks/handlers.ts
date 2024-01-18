@@ -5,13 +5,12 @@ import { API_BASE_URL } from '../api';
 import {
   fakeAccounts,
   fakePersonas,
-  fakePosters,
   generateFillerPosts,
   generateFillerThread,
 } from './data';
 import { Post, PostFlat, PostInput } from '../features/posts';
 
-const mockPosts = generateFillerPosts(undefined, 100);
+const mockPosts = generateFillerPosts(undefined, 422);
 
 const addAnotherMockPost = (threadId: string) => {
   const incidentalPersona = faker.helpers.arrayElement(fakePersonas);
@@ -80,19 +79,7 @@ export const handlers: RequestHandler[] = [
       faker.helpers.maybe(() => {
         addAnotherMockPost(threadId);
         faker.helpers.maybe(() => {
-          const incidentalPersona2 = faker.helpers.arrayElement(fakePersonas);
-          const incidentalAccount2 = fakeAccounts.find(
-            ({ id }) => id === incidentalPersona2.ownerAccountId,
-          );
-          const incidentalNewPost2 = {
-            id: faker.string.uuid(),
-            account: incidentalAccount2,
-            persona: incidentalPersona2,
-            content: 'Me too!',
-            threadId,
-            dateCreated: new Date().toISOString(),
-          } as Post;
-          mockPosts.push(incidentalNewPost2);
+          addAnotherMockPost(threadId);
         });
       });
       const newPost = {

@@ -31,15 +31,25 @@ import {
   Paragraph,
   Input,
   YStack,
+  useWindowDimensions,
+  useTheme,
 } from 'tamagui';
 import { Persona } from '../personas';
 import { Account } from '../accounts';
 import { fakeAccounts, fakePersonas } from '../../mocks/data';
 import { Thread } from '.';
+import Pagination from '../../components/Pagination';
 
 const pageSize: number = 10;
 
-export function PostComponent({ accountId, personaId, content }: PostFlat) {
+type PostComponentProps = {
+  post: PostFlat;
+  indexInThread: number;
+};
+
+export function PostComponent({ post, indexInThread = 0 }: PostComponentProps) {
+  const { accountId, personaId, content } = post;
+
   const account: Account = useAppSelector(
     state => state.accounts.byId[accountId],
   );
@@ -60,7 +70,18 @@ export function PostComponent({ accountId, personaId, content }: PostFlat) {
           {!persona.avatar && <Text>No avatar</Text>}
         </View>
         <View flex={1}>
-          <Paragraph>{content}</Paragraph>
+          <YStack>
+            {!!indexInThread && (
+              <View>
+                <Text alignSelf="flex-end" fontSize="$1" color="$gray10">
+                  #{indexInThread}
+                </Text>
+              </View>
+            )}
+            <View>
+              <Paragraph>{content}</Paragraph>
+            </View>
+          </YStack>
         </View>
       </XStack>
     </Card>
@@ -296,18 +317,37 @@ export function ThreadComponent({ id }: ThreadProps) {
     }
     return (
       <YStack>
-        <PostComponent {...item} />
+        <PostComponent
+          post={item}
+          indexInThread={(activePage - 1) * pageSize + index + 1}
+        />
         {index === posts.length - 1 && activePage === pageCount && (
           <View alignItems="center">
-            <XStack alignItems="center" gap="$2">
-              <Text>End of posts</Text>
-              <Button theme="active" onPress={checkForMorePosts}>
+            <XStack alignItems="center" gap="$3">
+              <Text fontSize="$3">
+                {isLoadingMorePosts ? 'Loading...' : 'End of posts.'}
+              </Text>
+              <Button
+                theme="active"
+                size="$3"
+                onPress={checkForMorePosts}
+                disabled={isLoadingMorePosts}>
                 Check for more
               </Button>
             </XStack>
           </View>
         )}
       </YStack>
+    );
+  };
+
+  const renderPagination = () => {
+    return (
+      <Pagination
+        pageCount={pageCount}
+        activePage={activePage}
+        onPageChange={loadPage}
+      />
     );
   };
 
@@ -321,6 +361,7 @@ export function ThreadComponent({ id }: ThreadProps) {
         data={posts}
         keyExtractor={(item: PostFlat) => item.id}
         renderItem={renderPost}
+        contentContainerStyle={{ padding: 20 }}
         ListHeaderComponent={
           <YStack marginBottom="$6">{renderPagination()}</YStack>
         }
@@ -342,55 +383,19 @@ export function ThreadComponent({ id }: ThreadProps) {
     );
   };
 
-  const renderPagination = () => {
-    const isFirstPage = activePage === 1;
-    const isLastPage = activePage === pageCount;
-    return (
-      <XStack gap="$2">
-        <Button
-          disabled={isFirstPage}
-          opacity={isFirstPage ? 0.5 : 1}
-          theme={isFirstPage ? 'active' : undefined}
-          variant={isFirstPage ? undefined : 'outlined'}
-          onPress={loadFirstPage}>
-          &lt;&lt;
-        </Button>
-        {Array.from({ length: pageCount }, (_, i) => i + 1).map(
-          (page: number) => {
-            const isActivePage = activePage === page;
-            return (
-              <Button
-                key={page}
-                disabled={isActivePage}
-                opacity={isActivePage ? 0.5 : 1}
-                theme={isActivePage ? 'active' : undefined}
-                variant={isActivePage ? undefined : 'outlined'}
-                onPress={() => loadPage(page)}>
-                {page}
-              </Button>
-            );
-          },
-        )}
-        <Button
-          disabled={isLastPage}
-          opacity={isLastPage ? 0.5 : 1}
-          theme={isLastPage ? 'active' : undefined}
-          variant={isLastPage ? undefined : 'outlined'}
-          onPress={loadLastPage}>
-          &gt;&gt;
-        </Button>
-      </XStack>
-    );
-  };
-
   return (
-    <View padding="$6">
-      <YStack gap="$6">{renderPosts()}</YStack>
+    <View flex={1}>
+      <YStack gap="$6" flex={1}>
+        {renderPosts()}
+      </YStack>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

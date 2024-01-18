@@ -99,7 +99,7 @@ export const generateFillerPosts = (
       ]),
       account: poster.account,
       persona: poster.persona,
-      content: faker.lorem.paragraphs(),
+      content: faker.lorem.paragraph(),
     } as Post;
   }).sort((a, b) => parseInt(b.dateCreated, 10) - parseInt(a.dateCreated, 10)); // Sort by date
 };
