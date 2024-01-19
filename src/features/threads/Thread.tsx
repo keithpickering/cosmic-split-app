@@ -129,7 +129,10 @@ export function ThreadComponent({ id }: ThreadProps) {
   } = useBoolean(false);
 
   /**
-   * Load the thread metadata
+   * Loads the metadata for the current thread.
+   * It fetches thread data based on the provided thread ID.
+   * If the thread data is already loading, it returns early.
+   * @returns {Promise<Thread | undefined>} The thread data payload if successful, or undefined if an error occurs.
    */
   const loadThreadData = async () => {
     if (isLoadingThreadData) {
@@ -152,7 +155,11 @@ export function ThreadComponent({ id }: ThreadProps) {
   };
 
   /**
-   * Load a specific page of posts
+   * Loads a specific page of posts in the thread.
+   * It calculates the cursor based on the provided page number and fetches the posts.
+   * If the page is already loading, it returns early to avoid duplicate requests.
+   * @param {number} page - The page number to load.
+   * @returns {Promise<void>} A promise that resolves when the posts have been loaded.
    */
   const loadPage = async (page: number) => {
     if (isLoadingMorePosts) {
@@ -162,8 +169,6 @@ export function ThreadComponent({ id }: ThreadProps) {
       setLoadingMorePostsTrue();
       // Determine the cursor (starting post ID) for the requested page, if it exists
       const cursor = pageCursors.current[page - 1] || null;
-      console.log('page', page);
-      console.log('cursor', cursor);
 
       // Fetch the posts using the cursor
       const { payload: newPosts } = await dispatch(
@@ -191,8 +196,12 @@ export function ThreadComponent({ id }: ThreadProps) {
     }
   };
 
-  console.log(pageCursors.current);
-
+  /**
+   * Checks for and loads more posts if available.
+   * It calculates whether there are new posts since the last loaded page and fetches them.
+   * This method is used to dynamically load new posts without reloading the entire page.
+   * @returns {Promise<void>} A promise that resolves when the check is complete and any new posts are loaded.
+   */
   const checkForMorePosts = async () => {
     if (isLoadingMorePosts || !thread?.id) {
       return;
@@ -247,6 +256,12 @@ export function ThreadComponent({ id }: ThreadProps) {
     }
   };
 
+  /**
+   * Submits a new post to the thread.
+   * It creates a new post with the current content and user details, then reloads the appropriate page.
+   * If a post submission is already in progress, it returns early.
+   * @returns {Promise<void>} A promise that resolves when the new post has been submitted and the thread is updated.
+   */
   const submitNewPost = async () => {
     if (isSubmittingNewPost || !thread?.id) {
       return;
@@ -265,6 +280,7 @@ export function ThreadComponent({ id }: ThreadProps) {
         }),
       );
       setNewPostContent('');
+      pageCursors.current[activePage] = null;
       await loadPage(payload.pageInThread);
     } catch (error) {
       //
@@ -289,8 +305,11 @@ export function ThreadComponent({ id }: ThreadProps) {
   );
 
   /**
-   * Render a single post
-   * @returns {React.JSX.Element|null}
+   * Renders a single post item.
+   * It returns a `YStack` component containing the post details.
+   * If the thread has no posts, it returns null.
+   * @param {ListRenderItem<PostFlat>} param0 - The post item and its index in the list.
+   * @returns {React.JSX.Element|null} The rendered post component or null if no posts are available.
    */
   const renderPost: ListRenderItem<PostFlat> = ({ item, index }) => {
     if (!thread?.postCount) {
@@ -322,6 +341,11 @@ export function ThreadComponent({ id }: ThreadProps) {
     );
   };
 
+  /**
+   * Renders the pagination controls for the thread.
+   * It uses the `Pagination` component with the current page count and active page.
+   * @returns {React.JSX.Element} The rendered pagination component.
+   */
   const renderPagination = () => {
     return (
       <Pagination
@@ -333,8 +357,9 @@ export function ThreadComponent({ id }: ThreadProps) {
   };
 
   /**
-   * Render a list of posts
-   * @returns {FlatList}
+   * Renders a list of posts in the thread.
+   * It returns a `FlatList` component containing all the posts with header and footer components.
+   * @returns {FlatList<PostFlat>} The rendered list of posts.
    */
   const renderPosts = () => {
     return (
