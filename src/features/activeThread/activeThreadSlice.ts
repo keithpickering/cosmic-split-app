@@ -54,17 +54,6 @@ const threadSlice = createSlice({
       .addCase(fetchSingleThread.rejected, state => {
         state.status = AsyncStatus.FAILED;
       });
-    /*.addCase(fetchPostList.fulfilled, (state, action) => {
-        // Don't bother if no active thread
-        if (!state.threadId) {
-          return;
-        }
-        const { pageSize, skipCount } = action.meta.arg.params;
-        // Set active page
-        state.activePage = Math.ceil(skipCount / pageSize + 1);
-        // Add fetched posts to the data store
-        state.postIds = action.payload.map((post: Post) => post.id);
-      });*/
   },
 });
 

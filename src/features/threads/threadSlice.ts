@@ -47,7 +47,7 @@ export const fetchThreadList = createAsyncThunk(
     try {
       const queryParams = new URLSearchParams();
       queryParams.set('pageSize', params.pageSize.toString());
-      queryParams.set('skipCount', params.skipCount.toString());
+      //queryParams.set('skipCount', params.skipCount.toString());
 
       // Add 'forumId' only if it's defined
       if (params.forumId) {

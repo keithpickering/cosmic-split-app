@@ -53,6 +53,8 @@ export default function Pagination({
       <Button
         key={page}
         disabled={activePage === page}
+        themeInverse={activePage === page}
+        color={activePage === page ? 'white' : undefined}
         onPress={() => onPageChange(page)}>
         {page}
       </Button>,

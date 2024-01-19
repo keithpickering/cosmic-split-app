@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { StyleSheet, FlatList, ListRenderItem } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../hooks';
@@ -72,11 +72,14 @@ export function PostComponent({ post, indexInThread = 0 }: PostComponentProps) {
         <View flex={1}>
           <YStack>
             {!!indexInThread && (
-              <View>
+              <XStack marginBottom="$4" justifyContent="space-between">
+                <Text alignSelf="flex-start" fontSize="$1" color="$gray10">
+                  {post.id}
+                </Text>
                 <Text alignSelf="flex-end" fontSize="$1" color="$gray10">
                   #{indexInThread}
                 </Text>
-              </View>
+              </XStack>
             )}
             <View>
               <Paragraph>{content}</Paragraph>
@@ -102,6 +105,8 @@ export function ThreadComponent({ id }: ThreadProps) {
     () => (thread?.postCount ? Math.ceil(thread.postCount / pageSize) : 0),
     [thread?.postCount],
   );
+
+  const pageCursors = useRef<{ [page: number]: string | null }>({});
 
   const [newPostContent, setNewPostContent] = useState('');
 
@@ -147,35 +152,7 @@ export function ThreadComponent({ id }: ThreadProps) {
   };
 
   /**
-   * Load the next page of posts
-   */
-  const loadMorePosts = async () => {
-    if (isLoadingMorePosts) {
-      return;
-    }
-    try {
-      setLoadingMorePostsTrue();
-      await dispatch(
-        fetchPostList({
-          params: {
-            threadId: id,
-            pageSize,
-            skipCount: posts.length,
-            sortMethod: SortMethod.DATE,
-            sortOrder: SortOrder.ASC,
-          },
-        }),
-      );
-    } catch (error) {
-      //
-    } finally {
-      setLoadingMorePostsFalse();
-    }
-  };
-
-  /**
    * Load a specific page of posts
-   * @param page The desired page to load
    */
   const loadPage = async (page: number) => {
     if (isLoadingMorePosts) {
@@ -183,18 +160,29 @@ export function ThreadComponent({ id }: ThreadProps) {
     }
     try {
       setLoadingMorePostsTrue();
-      const { payload: newPosts }: { payload: PostFlat[] } = await dispatch(
+      // Determine the cursor (starting post ID) for the requested page, if it exists
+      const cursor = pageCursors.current[page - 1] || null;
+      console.log('page', page);
+      console.log('cursor', cursor);
+
+      // Fetch the posts using the cursor
+      const { payload: newPosts } = await dispatch(
         fetchPostList({
           params: {
             threadId: id,
             pageSize,
-            skipCount: pageSize * (page - 1), // page is 1-based index
+            cursor: cursor || null,
+            page, // Send the page number in case there is no cursor for this page
             sortMethod: SortMethod.DATE,
             sortOrder: SortOrder.ASC,
           },
         }),
       );
-      dispatch(setActiveThreadPostIds(newPosts.map(post => post.id)));
+      // Store the cursor for the next page
+      if (newPosts.length > 0) {
+        pageCursors.current[page] = newPosts[newPosts.length - 1].id;
+      }
+      dispatch(setActiveThreadPostIds(newPosts.map((post: Post) => post.id)));
       dispatch(setActiveThreadPage(page));
     } catch (error) {
       //
@@ -203,19 +191,7 @@ export function ThreadComponent({ id }: ThreadProps) {
     }
   };
 
-  /**
-   * Load the oldest page of posts
-   */
-  const loadFirstPage = async () => {
-    return loadPage(1);
-  };
-
-  /**
-   * Load the newest page of posts
-   */
-  const loadLastPage = async () => {
-    return loadPage(pageCount);
-  };
+  console.log(pageCursors.current);
 
   const checkForMorePosts = async () => {
     if (isLoadingMorePosts || !thread?.id) {
@@ -223,44 +199,49 @@ export function ThreadComponent({ id }: ThreadProps) {
     }
     try {
       setLoadingMorePostsTrue();
-      /* await dispatch(
-        createNewPost({
-          postData: {
-            threadId: thread.id,
-            accountId: fakeAccounts[0].id,
-            personaId: fakePersonas[0].id,
-            content: 'fake fake fake',
-          },
-          token: 'testToken',
-        }),
-      ); */
+      // Fetch thread data to get the latest post count
       const latestThreadData = await loadThreadData();
       if (!latestThreadData?.postCount) {
         throw new Error();
       }
-      const newPostCount = latestThreadData.postCount - posts.length;
-      const skipCount = (activePage - 1) * pageSize + posts.length;
+      // Get the ID of the last post in the current posts array as the cursor
+      const lastPostId = posts.length > 0 ? posts[posts.length - 1].id : null;
+      // Determine the total number of posts already accounted for in the thread
+      const accountedPostCount = (activePage - 1) * pageSize + posts.length;
+      // Calculate the number of new posts
+      const newPostCount = latestThreadData.postCount - accountedPostCount;
+      if (!lastPostId || newPostCount <= 0) {
+        // If there are no new posts, we don't need to do anything else here
+        return;
+      }
+      // Determine the latest number of pages in the thread
       const newPageCount = Math.ceil(latestThreadData.postCount / pageSize);
+      if (pageCount !== newPageCount) {
+        // If page count has changed, go to the new last page, which will load the posts automatically
+        pageCursors.current[activePage] = null;
+        loadPage(newPageCount);
+        return;
+      }
+      // Fetch only the latest posts and add them to the current page using the cursor
       const { payload: newPosts }: { payload: PostFlat[] } = await dispatch(
         fetchPostList({
           params: {
             threadId: id,
             pageSize: newPostCount,
-            skipCount,
+            cursor: lastPostId || null,
             sortMethod: SortMethod.DATE,
             sortOrder: SortOrder.ASC,
           },
         }),
       );
-      // If page count has changed, go to the new page
-      if (pageCount !== newPageCount) {
-        loadPage(newPageCount);
+      const newLastPostId = newPosts[newPosts.length - 1]?.id;
+      if (!newLastPostId) {
         return;
       }
-      // Otherwise just append to current page
       dispatch(appendActiveThreadPostIds(newPosts.map(post => post.id)));
+      pageCursors.current[activePage] = newLastPostId;
     } catch (error) {
-      //
+      // Handle errors
     } finally {
       setLoadingMorePostsFalse();
     }
@@ -302,7 +283,7 @@ export function ThreadComponent({ id }: ThreadProps) {
       // Fetch thread metadata
       loadThreadData();
       // Fetch initial page of posts
-      loadFirstPage();
+      loadPage(1);
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]),
   );

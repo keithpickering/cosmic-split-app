@@ -45,13 +45,15 @@ export const fetchPostList = createAsyncThunk(
     try {
       const queryParams = new URLSearchParams();
       queryParams.set('pageSize', params.pageSize.toString());
-      queryParams.set('skipCount', params.skipCount.toString());
-
-      // Add 'threadId' only if it's defined
-      if (params.threadId) {
-        queryParams.set('threadId', params.threadId);
+      if (params.page) {
+        queryParams.set('page', params.page.toString());
       }
-
+      if (params.cursor) {
+        queryParams.set('cursor', params.cursor.toString());
+      }
+      if (params.threadId) {
+        queryParams.set('threadId', params.threadId.toString());
+      }
       return await fetchWithAuth(`/posts?${queryParams.toString()}`, {
         method: 'GET',
         token,

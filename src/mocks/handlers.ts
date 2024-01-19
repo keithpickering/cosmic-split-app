@@ -30,7 +30,7 @@ const addAnotherMockPost = (threadId: string) => {
 
 export const handlers: RequestHandler[] = [
   // Handles a GET request to fetch a single thread
-  http.get(`${API_BASE_URL}/threads/:threadId`, ({ params }) => {
+  http.get(`${API_BASE_URL}/threads/:threadId`, async ({ params }) => {
     const { threadId } = params;
 
     // Mock the possibility that a new post has been added since the last request
@@ -46,7 +46,9 @@ export const handlers: RequestHandler[] = [
       threadId.toString(),
       mockPosts.length,
     );
-
+    if (process.env.NODE_ENV !== 'test') {
+      await delay();
+    }
     return HttpResponse.json(mockThread);
   }),
 
@@ -54,12 +56,19 @@ export const handlers: RequestHandler[] = [
   http.get(`${API_BASE_URL}/posts`, async ({ request }) => {
     const url = new URL(request.url);
     const threadId = url.searchParams.get('threadId');
-    const pageSize = url.searchParams.get('pageSize') ?? '';
-    const skipCount = url.searchParams.get('skipCount') ?? '';
+    const pageSize = parseInt(url.searchParams.get('pageSize') ?? '10', 10);
+    const cursor = url.searchParams.get('cursor'); // cursor is the ID of the last post
+    const pageNumber = parseInt(url.searchParams.get('page') ?? '1', 10);
 
-    const start = parseInt(skipCount, 10);
-    const end = start + parseInt(pageSize, 10);
-    let paginatedPosts = mockPosts.slice(start, end);
+    let startIndex = 0;
+    if (cursor) {
+      const cursorIndex = mockPosts.findIndex(post => post.id === cursor);
+      startIndex = cursorIndex >= 0 ? cursorIndex + 1 : 0;
+    } else if (pageNumber) {
+      startIndex = (pageNumber - 1) * pageSize;
+    }
+    const endIndex = startIndex + pageSize;
+    let paginatedPosts = mockPosts.slice(startIndex, endIndex);
     if (threadId) {
       paginatedPosts = paginatedPosts.map(post => ({ ...post, threadId }));
     }
