@@ -57,7 +57,9 @@ export const handlers: RequestHandler[] = [
     const url = new URL(request.url);
     const threadId = url.searchParams.get('threadId');
     const pageSize = parseInt(url.searchParams.get('pageSize') ?? '10', 10);
-    const cursor = url.searchParams.get('cursor'); // cursor is the ID of the last post
+    // Cursor is the ID of the last post from the previous page
+    const cursor = url.searchParams.get('cursor');
+    // Page number will be used if there's no cursor (less precise)
     const pageNumber = parseInt(url.searchParams.get('page') ?? '1', 10);
 
     let startIndex = 0;

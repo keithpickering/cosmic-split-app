@@ -39,63 +39,16 @@ import { Account } from '../accounts';
 import { fakeAccounts, fakePersonas } from '../../mocks/data';
 import { Thread } from '.';
 import Pagination from '../../components/Pagination';
+import { timeAgo } from '../../utils';
+import PostComponent from '../posts/Post';
 
 const pageSize: number = 10;
-
-type PostComponentProps = {
-  post: PostFlat;
-  indexInThread: number;
-};
-
-export function PostComponent({ post, indexInThread = 0 }: PostComponentProps) {
-  const { accountId, personaId, content } = post;
-
-  const account: Account = useAppSelector(
-    state => state.accounts.byId[accountId],
-  );
-
-  const persona: Persona = useAppSelector(
-    state => state.personas.byId[personaId],
-  );
-
-  return (
-    <Card bordered padded marginBottom="$6">
-      <XStack gap="$6" flex={1}>
-        <View width={200}>
-          <Text fontWeight="700">{persona.displayName}</Text>
-          <Text>{account.email}</Text>
-          {persona.avatar && (
-            <Image source={{ uri: persona.avatar, width: 150, height: 150 }} />
-          )}
-          {!persona.avatar && <Text>No avatar</Text>}
-        </View>
-        <View flex={1}>
-          <YStack>
-            {!!indexInThread && (
-              <XStack marginBottom="$4" justifyContent="space-between">
-                <Text alignSelf="flex-start" fontSize="$1" color="$gray10">
-                  {post.id}
-                </Text>
-                <Text alignSelf="flex-end" fontSize="$1" color="$gray10">
-                  #{indexInThread}
-                </Text>
-              </XStack>
-            )}
-            <View>
-              <Paragraph>{content}</Paragraph>
-            </View>
-          </YStack>
-        </View>
-      </XStack>
-    </Card>
-  );
-}
 
 export type ThreadProps = {
   id: string | undefined;
 };
 
-export function ThreadComponent({ id }: ThreadProps) {
+export default function ThreadComponent({ id }: ThreadProps) {
   const dispatch = useAppDispatch();
   const thread = useAppSelector(selectActiveThread);
   const activePage = useAppSelector(selectActiveThreadPage);
@@ -105,6 +58,8 @@ export function ThreadComponent({ id }: ThreadProps) {
     () => (thread?.postCount ? Math.ceil(thread.postCount / pageSize) : 0),
     [thread?.postCount],
   );
+
+  const postListRef = useRef<FlatList<PostFlat>>();
 
   const pageCursors = useRef<{ [page: number]: string | null }>({});
 
@@ -189,6 +144,9 @@ export function ThreadComponent({ id }: ThreadProps) {
       }
       dispatch(setActiveThreadPostIds(newPosts.map((post: Post) => post.id)));
       dispatch(setActiveThreadPage(page));
+      if (postListRef.current) {
+        postListRef.current.scrollToOffset({ animated: true, offset: 0 });
+      }
     } catch (error) {
       //
     } finally {
@@ -364,6 +322,7 @@ export function ThreadComponent({ id }: ThreadProps) {
   const renderPosts = () => {
     return (
       <FlatList
+        ref={postListRef}
         data={posts}
         keyExtractor={(item: PostFlat) => item.id}
         renderItem={renderPost}

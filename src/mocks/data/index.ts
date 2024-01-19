@@ -8,18 +8,22 @@ export const fakeAccounts: Account[] = [
   {
     id: '1c57b68600552041df60d39d7fa69fc1',
     email: 'opinionbot@yahoo.com',
+    username: 'pixuminum',
   },
   {
     id: '709d68522b56b5a66658d2190a72d5bd',
     email: 'readytorumble@hotmail.com',
+    username: 'wse',
   },
   {
     id: 'ff9020841ffbe9ac51cac536206f37a2',
     email: 'seriousdeerious@gmail.com',
+    username: 'dyeer',
   },
   {
     id: '6c30cd3b855d4a65f63db65956d3a598',
     email: 'dguy1337@outlook.com',
+    username: 'dguy1337',
   },
 ];
 
@@ -33,7 +37,7 @@ export const fakePersonas: Persona[] = [
   {
     id: 'd03e7fe8071264badccbc940194b90a7',
     ownerAccountId: '1c57b68600552041df60d39d7fa69fc1',
-    displayName: 'Perfect Lurker',
+    displayName: 'Anonymous Andy',
   },
   {
     id: '61850d892c3887373b5cf9bface3cdd7',
@@ -101,7 +105,10 @@ export const generateFillerPosts = (
       persona: poster.persona,
       content: faker.lorem.paragraph(),
     } as Post;
-  }).sort((a, b) => parseInt(b.dateCreated, 10) - parseInt(a.dateCreated, 10)); // Sort by date
+  }).sort(
+    (a, b) =>
+      new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime(),
+  ); // Sort by date
 };
 
 export const generateFillerThread = (id: string, postCount: number = 25) =>

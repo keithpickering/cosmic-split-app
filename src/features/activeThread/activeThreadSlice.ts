@@ -13,6 +13,7 @@ interface ActiveThreadState {
   threadId?: string;
   activePage: number;
   postIds: string[];
+  selectedPostIds: string[];
 }
 
 const initialState: ActiveThreadState = {
@@ -20,6 +21,7 @@ const initialState: ActiveThreadState = {
   threadId: undefined,
   activePage: 1,
   postIds: [],
+  selectedPostIds: [],
 };
 
 const threadSlice = createSlice({
