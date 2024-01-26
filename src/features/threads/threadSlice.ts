@@ -122,12 +122,9 @@ export const editThread = createAsyncThunk(
   },
 );
 
-type ThreadsKeyed = {
-  [byId: string]: Thread;
+type ThreadState = {
+  byId: { [id: string]: Thread };
 };
-interface ThreadState {
-  byId: ThreadsKeyed;
-}
 
 const initialState: ThreadState = {
   byId: {},

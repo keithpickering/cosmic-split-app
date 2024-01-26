@@ -11,6 +11,7 @@ import { Post } from '../posts';
  * @property {string} originalPosterAccountId - Identifier for the account of the original poster.
  * @property {string} originalPosterPersonaId - Identifier for the persona of the original poster.
  * @property {string} title - The title of the thread.
+ * @property {number} postCount - The total number of posts in the thread (currently-loaded or otherwise).
  */
 export type Thread = {
   id: string;

@@ -37,8 +37,8 @@ export default function PostComponent({
   return (
     <Card bordered padded marginBottom="$6">
       <XStack gap="$6" flex={1}>
-        <View width={150}>
-          <YStack gap="$1" marginBottom="$2">
+        <YStack width={150} gap="$2">
+          <YStack gap="$1">
             <Text fontWeight="700">{persona.displayName}</Text>
             <Text fontSize="$2" color="$gray10">
               {account.username}
@@ -50,9 +50,23 @@ export default function PostComponent({
               source={{ uri: persona.avatar, width: 150, height: 150 }}
             />
           )}
-          {!persona.avatar && <Text>No avatar</Text>}
-        </View>
-        <View flex={1}>
+          {!persona.avatar && (
+            <Image
+              borderRadius="$1"
+              source={{
+                uri: '/public/default-avatars/no-avatar.png',
+                width: 150,
+                height: 150,
+              }}
+            />
+          )}
+          {persona.tagline && (
+            <Text textAlign="center" fontSize="$3">
+              {persona.tagline}
+            </Text>
+          )}
+        </YStack>
+        <YStack flex={1}>
           <YStack flex={1}>
             {!!indexInThread && (
               <XStack marginBottom="$4" justifyContent="space-between">
@@ -77,7 +91,7 @@ export default function PostComponent({
               </Text>
             </XStack>
           </YStack>
-        </View>
+        </YStack>
       </XStack>
     </Card>
   );

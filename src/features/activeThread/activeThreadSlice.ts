@@ -8,13 +8,13 @@ import { RootState } from '../../store';
 import { Thread } from '../threads';
 import { fetchSingleThread } from '../threads/threadSlice';
 
-interface ActiveThreadState {
+type ActiveThreadState = {
   status: AsyncStatus;
   threadId?: string;
   activePage: number;
   postIds: string[];
   selectedPostIds: string[];
-}
+};
 
 const initialState: ActiveThreadState = {
   status: AsyncStatus.IDLE,

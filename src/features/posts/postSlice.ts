@@ -122,15 +122,12 @@ export const editPost = createAsyncThunk(
   },
 );
 
-type PostsKeyed = {
-  [byId: string]: PostFlat;
-};
-interface PostState {
+type PostState = {
   status: AsyncStatus;
   allIds: string[];
-  byId: PostsKeyed;
+  byId: { [id: string]: PostFlat };
   hasMore: boolean;
-}
+};
 
 const initialState: PostState = {
   status: AsyncStatus.IDLE,

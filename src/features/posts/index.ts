@@ -1,22 +1,6 @@
 import { PaginationRequest } from '../../interfaces';
-import { Persona } from '../../mocks/data';
+import { Persona } from '../personas';
 import { Account } from '../accounts';
-
-export type Badge = {
-  id: string;
-  name: string;
-  thumbnailUrl: string;
-};
-
-export type Poster = {
-  accountId: string;
-  personaId: string;
-  displayName: string;
-  avatar?: string;
-  tagline?: string;
-  signature?: string;
-  badges?: Badge[];
-};
 
 /**
  * Represents a post made by a user.
@@ -25,6 +9,8 @@ export type Poster = {
  * @type Post
  * @typedef {Object} Post
  * @property {string} id - Unique identifier for the post.
+ * @property {Account} account - The poster's account data.
+ * @property {Persona} persona - The poster's persona data.
  * @property {string} threadId - Identifier for the thread the post belongs to.
  * @property {string} content - The actual content of the post.
  * @property {string} dateCreated - The ISO string date when the post was created.
@@ -40,6 +26,20 @@ export type Post = {
   dateUpdated?: string;
 };
 
+/**
+ * Represents a post made by a user, flattened so that the account and persona are referenced by ID.
+ *
+ * @export
+ * @type Post
+ * @typedef {Object} Post
+ * @property {string} id - Unique identifier for the post.
+ * @property {string} accountId - The poster's account ID.
+ * @property {string} personaId - The poster's persona ID.
+ * @property {string} threadId - Identifier for the thread the post belongs to.
+ * @property {string} content - The actual content of the post.
+ * @property {string} dateCreated - The ISO string date when the post was created.
+ * @property {string} dateUpdated - The ISO string date when the post was last updated (optional)
+ */
 export type PostFlat = {
   id: string;
   accountId: string;

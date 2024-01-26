@@ -18,7 +18,7 @@ import {
   fetchPostList,
 } from '../posts/postSlice';
 import { SortMethod, SortOrder } from '../../enums';
-import { Post, Poster, PostFlat } from '../posts';
+import { Post, PostFlat } from '../posts';
 import { useCallback } from 'react';
 import { useBoolean } from 'usehooks-ts';
 import {
