@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { StyleSheet, FlatList, ListRenderItem } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { AsyncButton } from '../../components/AsyncButton';
@@ -46,37 +46,57 @@ const pageSize: number = 10;
 
 export type ThreadProps = {
   id: string | undefined;
+  initialPage: number;
 };
 
-export default function ThreadComponent({ id }: ThreadProps) {
+export default function ThreadComponent({ id, initialPage }: ThreadProps) {
   const dispatch = useAppDispatch();
+
+  // The current active thread
   const thread = useAppSelector(selectActiveThread);
+
+  // The current active page in the thread
   const activePage = useAppSelector(selectActiveThreadPage);
+
+  // The current list of posts (for the active page)
   const posts = useAppSelector(selectActiveThreadPosts);
 
-  const pageCount = useMemo(
+  // The current number of pages in the thread,
+  // according to the post count and page size.
+  const pageCount = useMemo<number>(
     () => (thread?.postCount ? Math.ceil(thread.postCount / pageSize) : 0),
     [thread?.postCount],
   );
 
+  // The FlatList containing the posts.
+  // This ref can be used to scroll to certain posts, etc.
   const postListRef = useRef<FlatList<PostFlat>>();
 
+  // A ref storing the cutoff points for each page as they are loaded.
+  // This should make pagination reliable if posts are deleted during the session.
   const pageCursors = useRef<{ [page: number]: string | null }>({});
 
-  const [newPostContent, setNewPostContent] = useState('');
+  // State value to store the ID of a thread that has been loaded.
+  const [mountedThreadId, setMountedThreadId] = useState<string | null>(null);
 
+  // State value to store a new post the user plans to add to the thread.
+  const [newPostContent, setNewPostContent] = useState<string>('');
+
+  // Boolean representing thread metadata loading state
   const {
     value: isLoadingThreadData,
     setTrue: setLoadingThreadDataTrue,
     setFalse: setLoadingThreadDataFalse,
   } = useBoolean(false);
 
+  // Boolean representing loading state for a new page of posts
   const {
     value: isLoadingMorePosts,
     setTrue: setLoadingMorePostsTrue,
     setFalse: setLoadingMorePostsFalse,
   } = useBoolean(false);
 
+  // Boolean representing new post creation loading state
   const {
     value: isSubmittingNewPost,
     setTrue: setSubmittingNewPostTrue,
@@ -89,7 +109,7 @@ export default function ThreadComponent({ id }: ThreadProps) {
    * If the thread data is already loading, it returns early.
    * @returns {Promise<Thread | undefined>} The thread data payload if successful, or undefined if an error occurs.
    */
-  const loadThreadData = async () => {
+  const loadThreadData = useCallback(async () => {
     if (isLoadingThreadData) {
       return;
     }
@@ -107,7 +127,13 @@ export default function ThreadComponent({ id }: ThreadProps) {
     } finally {
       setLoadingThreadDataFalse();
     }
-  };
+  }, [
+    id,
+    dispatch,
+    isLoadingThreadData,
+    setLoadingThreadDataTrue,
+    setLoadingThreadDataFalse,
+  ]);
 
   /**
    * Loads a specific page of posts in the thread.
@@ -116,43 +142,56 @@ export default function ThreadComponent({ id }: ThreadProps) {
    * @param {number} page - The page number to load.
    * @returns {Promise<void>} A promise that resolves when the posts have been loaded.
    */
-  const loadPage = async (page: number) => {
-    if (isLoadingMorePosts) {
-      return;
-    }
-    try {
-      setLoadingMorePostsTrue();
-      // Determine the cursor (starting post ID) for the requested page, if it exists
-      const cursor = pageCursors.current[page - 1] || null;
+  const loadPage = useCallback(
+    async (page: number) => {
+      if (isLoadingMorePosts) {
+        return;
+      }
+      try {
+        setLoadingMorePostsTrue();
+        // Determine the cursor (starting post ID) for the requested page, if it exists
+        const cursor = pageCursors.current[page - 1] || null;
 
-      // Fetch the posts using the cursor
-      const { payload: newPosts } = await dispatch(
-        fetchPostList({
-          params: {
-            threadId: id,
-            pageSize,
-            cursor: cursor || null,
-            page, // Send the page number in case there is no cursor for this page
-            sortMethod: SortMethod.DATE,
-            sortOrder: SortOrder.ASC,
-          },
-        }),
-      );
-      // Store the cursor for the next page
-      if (newPosts.length > 0) {
-        pageCursors.current[page] = newPosts[newPosts.length - 1].id;
+        // Fetch the posts using the cursor
+        const { payload: newPosts } = await dispatch(
+          fetchPostList({
+            params: {
+              threadId: id,
+              pageSize,
+              cursor: cursor || null,
+              page, // Send the page number in case there is no cursor for this page
+              sortMethod: SortMethod.DATE,
+              sortOrder: SortOrder.ASC,
+            },
+          }),
+        );
+        // Store the cursor for the next page
+        if (newPosts.length > 0) {
+          pageCursors.current[page] = newPosts[newPosts.length - 1].id;
+        }
+        // Update post and page values in the store
+        dispatch(setActiveThreadPostIds(newPosts.map((post: Post) => post.id)));
+        dispatch(setActiveThreadPage(page));
+        // Scroll to the top of the new page
+        if (postListRef.current) {
+          postListRef.current.scrollToOffset({ animated: true, offset: 0 });
+        }
+        // Update the page param in the router
+        router.setParams({ page: page.toString() });
+      } catch (error) {
+        //
+      } finally {
+        setLoadingMorePostsFalse();
       }
-      dispatch(setActiveThreadPostIds(newPosts.map((post: Post) => post.id)));
-      dispatch(setActiveThreadPage(page));
-      if (postListRef.current) {
-        postListRef.current.scrollToOffset({ animated: true, offset: 0 });
-      }
-    } catch (error) {
-      //
-    } finally {
-      setLoadingMorePostsFalse();
-    }
-  };
+    },
+    [
+      dispatch,
+      id,
+      isLoadingMorePosts,
+      setLoadingMorePostsFalse,
+      setLoadingMorePostsTrue,
+    ],
+  );
 
   /**
    * Checks for and loads more posts if available.
@@ -254,12 +293,17 @@ export default function ThreadComponent({ id }: ThreadProps) {
       if (!id) {
         return;
       }
+      // Return if we've already set up this thread
+      if (id === mountedThreadId) {
+        return;
+      }
       // Fetch thread metadata
       loadThreadData();
       // Fetch initial page of posts
-      loadPage(1);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]),
+      loadPage(initialPage);
+      // Set active thread ID so this doesn't happen again unless the ID changes
+      setMountedThreadId(id);
+    }, [id, mountedThreadId, loadThreadData, loadPage, initialPage]),
   );
 
   /**

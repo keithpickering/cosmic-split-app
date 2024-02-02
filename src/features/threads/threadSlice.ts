@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { AsyncStatus } from '../../enums';
 import { Post } from '../posts';
 import { fetchWithAuth } from '../../api';
@@ -123,11 +123,17 @@ export const editThread = createAsyncThunk(
 );
 
 type ThreadState = {
+  status: AsyncStatus;
+  allIds: string[];
   byId: { [id: string]: Thread };
+  hasMore: boolean;
 };
 
 const initialState: ThreadState = {
+  status: AsyncStatus.IDLE,
   byId: {},
+  allIds: [],
+  hasMore: true,
 };
 
 const threadSlice = createSlice({
