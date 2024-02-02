@@ -286,23 +286,26 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
     }
   };
 
-  // On focus, fetch thread metadata and initial page of posts
+  // When focused, fetch thread metadata and initial page of posts
   useFocusEffect(
     useCallback(() => {
-      // Return if no id
-      if (!id) {
-        return;
-      }
-      // Return if we've already set up this thread
-      if (id === mountedThreadId) {
-        return;
-      }
-      // Fetch thread metadata
-      loadThreadData();
-      // Fetch initial page of posts
-      loadPage(initialPage);
-      // Set active thread ID so this doesn't happen again unless the ID changes
-      setMountedThreadId(id);
+      const loadNewThread = async () => {
+        // Return if no id
+        if (!id) {
+          return;
+        }
+        // Return if we've already set up this thread
+        if (id === mountedThreadId) {
+          return;
+        }
+        // Fetch thread metadata
+        await loadThreadData();
+        // Fetch initial page of posts
+        await loadPage(initialPage);
+        // Set active thread ID so this doesn't happen again unless the ID changes
+        setMountedThreadId(id);
+      };
+      loadNewThread();
     }, [id, mountedThreadId, loadThreadData, loadPage, initialPage]),
   );
 
