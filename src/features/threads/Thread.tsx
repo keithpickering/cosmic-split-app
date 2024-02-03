@@ -194,6 +194,37 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
   );
 
   /**
+   * Loads the thread metadata and initial page of posts.
+   */
+  const loadThreadAndInitialPosts = useCallback(async () => {
+    // Return if no id
+    if (!id) {
+      return;
+    }
+    // Return if we've already set up this thread
+    if (id === mountedThreadId) {
+      return;
+    }
+    // Set active thread ID so this doesn't happen again unless the ID changes
+    setMountedThreadId(id);
+    try {
+      // Fetch thread metadata
+      await loadThreadData();
+      // Fetch initial page of posts
+      loadPage(initialPage);
+    } catch (error) {
+      //
+    }
+  }, [id, mountedThreadId, loadThreadData, loadPage, initialPage]);
+
+  // Effect to automatically call loadThreadAndInitialPosts when focused
+  useFocusEffect(
+    useCallback(() => {
+      loadThreadAndInitialPosts();
+    }, [loadThreadAndInitialPosts]),
+  );
+
+  /**
    * Checks for and loads more posts if available.
    * It calculates whether there are new posts since the last loaded page and fetches them.
    * This method is used to dynamically load new posts without reloading the entire page.
@@ -285,29 +316,6 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
       setSubmittingNewPostFalse();
     }
   };
-
-  // When focused, fetch thread metadata and initial page of posts
-  useFocusEffect(
-    useCallback(() => {
-      const loadNewThread = async () => {
-        // Return if no id
-        if (!id) {
-          return;
-        }
-        // Return if we've already set up this thread
-        if (id === mountedThreadId) {
-          return;
-        }
-        // Fetch thread metadata
-        await loadThreadData();
-        // Fetch initial page of posts
-        await loadPage(initialPage);
-        // Set active thread ID so this doesn't happen again unless the ID changes
-        setMountedThreadId(id);
-      };
-      loadNewThread();
-    }, [id, mountedThreadId, loadThreadData, loadPage, initialPage]),
-  );
 
   /**
    * Renders a single post item.

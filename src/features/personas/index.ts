@@ -12,7 +12,7 @@
  */
 export type Persona = {
   id: string;
-  ownerAccountIds: string;
+  ownerAccountId: string;
   displayName: string;
   avatar?: string;
   tagline?: string;

@@ -1,5 +1,16 @@
-import React from 'react';
-import { Button, XStack, Text } from 'tamagui';
+import React, { useState } from 'react';
+import {
+  Button,
+  XStack,
+  Text,
+  Popover,
+  YStack,
+  Label,
+  Input,
+  Adapt,
+} from 'tamagui';
+
+const MAX_PAGES_TO_SHOW = 5; // Maximum number of pages to display in the pagination bar
 
 type PaginationProps = {
   pageCount: number;
@@ -12,8 +23,6 @@ export default function Pagination({
   activePage,
   onPageChange,
 }: PaginationProps) {
-  const MAX_PAGES_TO_SHOW = 5; // Maximum number of pages to display in the pagination bar
-
   const paginationItems = [];
 
   let startPage = Math.max(1, activePage - Math.floor(MAX_PAGES_TO_SHOW / 2));
@@ -44,7 +53,9 @@ export default function Pagination({
 
   // Start Ellipsis
   if (startPage > 1) {
-    paginationItems.push(<Button key="start-ellipsis">...</Button>);
+    paginationItems.push(
+      <EllipsisButton key="start-ellipsis" onSelectPage={onPageChange} />,
+    );
   }
 
   // Page Numbers
@@ -63,7 +74,9 @@ export default function Pagination({
 
   // End Ellipsis
   if (endPage < pageCount) {
-    paginationItems.push(<Button key="end-ellipsis">...</Button>);
+    paginationItems.push(
+      <EllipsisButton key="end-ellipsis" onSelectPage={onPageChange} />,
+    );
   }
 
   // Next Page Button
@@ -89,5 +102,81 @@ export default function Pagination({
     <XStack alignItems="center" gap="$2">
       {paginationItems}
     </XStack>
+  );
+}
+
+type EllipsisButtonProps = {
+  onSelectPage: (page: number) => void;
+};
+
+function EllipsisButton({ onSelectPage }: EllipsisButtonProps) {
+  const [pageInput, setPageInput] = useState('');
+
+  const handleSelect = () => {
+    try {
+      const page = parseInt(pageInput, 10);
+      if (Number.isNaN(page)) {
+        throw new Error();
+      }
+      onSelectPage(page);
+    } catch (error) {
+      //
+    } finally {
+      setPageInput('');
+    }
+  };
+
+  return (
+    <Popover size="$3" allowFlip>
+      <Popover.Trigger asChild>
+        <Button key="start-ellipsis">...</Button>
+      </Popover.Trigger>
+      <Adapt when="sm" platform="touch">
+        <Popover.Sheet modal dismissOnSnapToBottom>
+          <Popover.Sheet.Frame padding="$4">
+            <Adapt.Contents />
+          </Popover.Sheet.Frame>
+          <Popover.Sheet.Overlay
+            animation="lazy"
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+          />
+        </Popover.Sheet>
+      </Adapt>
+      <Popover.Content
+        borderWidth={1}
+        borderColor="$borderColor"
+        enterStyle={{ y: -10, opacity: 0 }}
+        exitStyle={{ y: -10, opacity: 0 }}
+        elevate
+        animation={[
+          'quick',
+          {
+            opacity: {
+              overshootClamping: true,
+            },
+          },
+        ]}>
+        <Popover.Arrow borderWidth={1} borderColor="$borderColor" size="$4" />
+        <YStack space="$3">
+          <XStack space="$2" alignItems="center">
+            <Input
+              aria-label="Page"
+              keyboardType="numeric"
+              placeholder="Page"
+              size="$2"
+              width="$5"
+              value={pageInput}
+              onChangeText={setPageInput}
+            />
+            <Popover.Close asChild>
+              <Button size="$2" onPress={handleSelect}>
+                Go
+              </Button>
+            </Popover.Close>
+          </XStack>
+        </YStack>
+      </Popover.Content>
+    </Popover>
   );
 }

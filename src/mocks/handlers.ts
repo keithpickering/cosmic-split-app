@@ -9,14 +9,19 @@ import {
   generateFillerThread,
 } from './data';
 import { Post, PostFlat, PostInput } from '../features/posts';
+import mockPostsJson from './data/mockThread.json';
 
-const mockPosts = generateFillerPosts(undefined, 422);
+//const mockPosts = generateFillerPosts(undefined, 422);
+const mockPosts: Post[] = mockPostsJson;
 
 const addAnotherMockPost = (threadId: string) => {
   const incidentalPersona = faker.helpers.arrayElement(fakePersonas);
   const incidentalAccount = fakeAccounts.find(
     ({ id }) => id === incidentalPersona.ownerAccountId,
   );
+  if (!incidentalAccount) {
+    return;
+  }
   const incidentalNewPost = {
     id: faker.string.uuid(),
     account: incidentalAccount,
