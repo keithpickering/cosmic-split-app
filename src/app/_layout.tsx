@@ -8,10 +8,17 @@ import { useState } from 'react';
 import { Platform } from 'react-native';
 import 'react-native-url-polyfill/auto';
 //import '@tamagui/core/reset.css';
-import { TamaguiProvider } from 'tamagui';
+import { TamaguiProvider, YStack } from 'tamagui';
 import tamaguiConfig from '../../tamagui.config';
+import {
+  Toast,
+  ToastProvider,
+  ToastViewport,
+  useToastState,
+} from '@tamagui/toast';
 import { Provider } from 'react-redux';
 import { store } from '../store';
+import CurrentToast from '../components/CurrentToast';
 
 /**
  * Enable data mocking for local development and testing.
@@ -49,9 +56,12 @@ export default function Layout() {
 
   return (
     <TamaguiProvider config={tamaguiConfig}>
-      <Provider store={store}>
-        <Stack />
-      </Provider>
+      <ToastProvider>
+        <Provider store={store}>
+          <Stack />
+          <ToastViewport flexDirection="column" bottom={20} right={20} />
+        </Provider>
+      </ToastProvider>
     </TamaguiProvider>
   );
 }

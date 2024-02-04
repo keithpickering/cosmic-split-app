@@ -12,10 +12,11 @@
   "dependencies": {
     "@expo/webpack-config": "^19.0.0",
     "@reduxjs/toolkit": "^1.8.6",
-    "@tamagui/config": "^1.85.1",
-    "@tamagui/core": "^1.85.1",
-    "@tamagui/lucide-icons": "^1.85.1",
-    "@tamagui/react-native-media-driver": "^1.85.1",
+    "@tamagui/config": "1.85.1",
+    "@tamagui/core": "1.85.1",
+    "@tamagui/lucide-icons": "1.85.1",
+    "@tamagui/react-native-media-driver": "1.85.1",
+    "@tamagui/toast": "1.85.1",
     "@types/react-native": "~0.70.6",
     "burnt": "^0.12.2",
     "expo": "^49.0.21",
@@ -32,7 +33,7 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.6",
     "react-redux": "^9.0.4",
-    "tamagui": "^1.85.1",
+    "tamagui": "1.85.1",
     "usehooks-ts": "^2.9.2"
   },
   "devDependencies": {

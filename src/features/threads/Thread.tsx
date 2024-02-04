@@ -34,6 +34,7 @@ import {
   useWindowDimensions,
   useTheme,
 } from 'tamagui';
+import { Toast, useToastController, useToastState } from '@tamagui/toast';
 import { Persona } from '../personas';
 import { Account } from '../accounts';
 import { fakeAccounts, fakePersonas } from '../../mocks/data';
@@ -51,6 +52,10 @@ export type ThreadProps = {
 
 export default function ThreadComponent({ id, initialPage }: ThreadProps) {
   const dispatch = useAppDispatch();
+
+  const toast = useToastController();
+  const currentToast = useToastState();
+  console.log(currentToast);
 
   // The current active thread
   const thread = useAppSelector(selectActiveThread);
@@ -123,7 +128,7 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
       );
       return payload;
     } catch (error) {
-      //
+      toast.show('Failed to load thread metadata.', { variant: 'error' });
     } finally {
       setLoadingThreadDataFalse();
     }
@@ -133,6 +138,7 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
     isLoadingThreadData,
     setLoadingThreadDataTrue,
     setLoadingThreadDataFalse,
+    toast,
   ]);
 
   /**
@@ -143,12 +149,18 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
    * @returns {Promise<void>} A promise that resolves when the posts have been loaded.
    */
   const loadPage = useCallback(
-    async (page: number) => {
+    async (page: number = 1) => {
       if (isLoadingMorePosts) {
         return;
       }
       try {
         setLoadingMorePostsTrue();
+
+        // Throw an error if the page is invalid
+        if (page < 1) {
+          throw new Error('Invalid page.');
+        }
+
         // Determine the cursor (starting post ID) for the requested page, if it exists
         const cursor = pageCursors.current[page - 1] || null;
 
@@ -165,21 +177,27 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
             },
           }),
         );
+
         // Store the cursor for the next page
         if (newPosts.length > 0) {
           pageCursors.current[page] = newPosts[newPosts.length - 1].id;
+        } else {
+          throw new Error('Page returned zero posts.');
         }
+
         // Update post and page values in the store
         dispatch(setActiveThreadPostIds(newPosts.map((post: Post) => post.id)));
         dispatch(setActiveThreadPage(page));
+
         // Scroll to the top of the new page
         if (postListRef.current) {
           postListRef.current.scrollToOffset({ animated: true, offset: 0 });
         }
+
         // Update the page param in the router
         router.setParams({ page: page.toString() });
       } catch (error) {
-        //
+        toast.show(`Couldn't find page ${page}.`, { variant: 'error' });
       } finally {
         setLoadingMorePostsFalse();
       }
@@ -190,6 +208,7 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
       isLoadingMorePosts,
       setLoadingMorePostsFalse,
       setLoadingMorePostsTrue,
+      toast,
     ],
   );
 
@@ -211,11 +230,11 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
       // Fetch thread metadata
       await loadThreadData();
       // Fetch initial page of posts
-      loadPage(initialPage);
+      await loadPage(initialPage || 1);
     } catch (error) {
-      //
+      toast.show('Failed to load thread.', { variant: 'error' });
     }
-  }, [id, mountedThreadId, loadThreadData, loadPage, initialPage]);
+  }, [id, mountedThreadId, loadThreadData, loadPage, initialPage, toast]);
 
   // Effect to automatically call loadThreadAndInitialPosts when focused
   useFocusEffect(
@@ -249,6 +268,7 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
       const newPostCount = latestThreadData.postCount - accountedPostCount;
       if (!lastPostId || newPostCount <= 0) {
         // If there are no new posts, we don't need to do anything else here
+        // toast.show("You're viewing the latest posts.");
         return;
       }
       // Determine the latest number of pages in the thread
@@ -278,7 +298,7 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
       dispatch(appendActiveThreadPostIds(newPosts.map(post => post.id)));
       pageCursors.current[activePage] = newLastPostId;
     } catch (error) {
-      // Handle errors
+      toast.show('Failed to check for posts.', { variant: 'error' });
     } finally {
       setLoadingMorePostsFalse();
     }
@@ -311,7 +331,7 @@ export default function ThreadComponent({ id, initialPage }: ThreadProps) {
       pageCursors.current[activePage] = null;
       await loadPage(payload.pageInThread);
     } catch (error) {
-      //
+      toast.show('Failed to submit post.', { variant: 'error' });
     } finally {
       setSubmittingNewPostFalse();
     }

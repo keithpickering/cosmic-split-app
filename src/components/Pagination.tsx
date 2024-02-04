@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { PropsWithChildren, forwardRef, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import {
   Button,
   XStack,
@@ -8,6 +9,7 @@ import {
   Label,
   Input,
   Adapt,
+  ButtonProps,
 } from 'tamagui';
 
 const MAX_PAGES_TO_SHOW = 5; // Maximum number of pages to display in the pagination bar
@@ -33,22 +35,22 @@ export default function Pagination({
   }
 
   paginationItems.push(
-    <Button
+    <PaginationButton
       key="first"
-      disabled={activePage === 1}
+      isDisabled={activePage === 1}
       onPress={() => onPageChange(1)}>
       &lt;&lt;
-    </Button>,
+    </PaginationButton>,
   );
 
   // Previous Page Button
   paginationItems.push(
-    <Button
+    <PaginationButton
       key="prev"
-      disabled={activePage === 1}
+      isDisabled={activePage === 1}
       onPress={() => onPageChange(activePage - 1)}>
       &lt;
-    </Button>,
+    </PaginationButton>,
   );
 
   // Start Ellipsis
@@ -60,15 +62,15 @@ export default function Pagination({
 
   // Page Numbers
   for (let page = startPage; page <= endPage; page++) {
+    const isActivePage = activePage === page;
     paginationItems.push(
-      <Button
+      <PaginationButton
         key={page}
-        disabled={activePage === page}
-        themeInverse={activePage === page}
-        color={activePage === page ? 'white' : undefined}
+        isDisabled={isActivePage}
+        isActive={isActivePage}
         onPress={() => onPageChange(page)}>
         {page}
-      </Button>,
+      </PaginationButton>,
     );
   }
 
@@ -81,27 +83,53 @@ export default function Pagination({
 
   // Next Page Button
   paginationItems.push(
-    <Button
+    <PaginationButton
       key="next"
-      disabled={activePage === pageCount}
+      isDisabled={activePage === pageCount}
       onPress={() => onPageChange(activePage + 1)}>
       &gt;
-    </Button>,
+    </PaginationButton>,
   );
 
   paginationItems.push(
-    <Button
+    <PaginationButton
       key="last"
-      disabled={activePage === pageCount}
+      isDisabled={activePage === pageCount}
       onPress={() => onPageChange(pageCount)}>
       &gt;&gt;
-    </Button>,
+    </PaginationButton>,
   );
 
   return (
     <XStack alignItems="center" gap="$2">
       {paginationItems}
     </XStack>
+  );
+}
+
+type PaginationButtonProps = {
+  onPress?: () => void;
+  isDisabled?: boolean;
+  isActive?: boolean;
+};
+
+function PaginationButton({
+  onPress,
+  isDisabled = false,
+  isActive = false,
+  children,
+}: PropsWithChildren<PaginationButtonProps>) {
+  return (
+    <Button
+      onPress={onPress}
+      disabled={isDisabled}
+      opacity={isDisabled ? 0.5 : 1}
+      size="$3"
+      theme={isActive ? 'active' : null}
+      chromeless={!isActive}
+      style={styles.button}>
+      {children}
+    </Button>
   );
 }
 
@@ -127,9 +155,9 @@ function EllipsisButton({ onSelectPage }: EllipsisButtonProps) {
   };
 
   return (
-    <Popover size="$3" allowFlip>
-      <Popover.Trigger asChild>
-        <Button key="start-ellipsis">...</Button>
+    <Popover size="$3" placement="right" offset={{ mainAxis: -60 }} allowFlip>
+      <Popover.Trigger>
+        <PaginationButton>...</PaginationButton>
       </Popover.Trigger>
       <Adapt when="sm" platform="touch">
         <Popover.Sheet modal dismissOnSnapToBottom>
@@ -138,16 +166,16 @@ function EllipsisButton({ onSelectPage }: EllipsisButtonProps) {
           </Popover.Sheet.Frame>
           <Popover.Sheet.Overlay
             animation="lazy"
-            enterStyle={{ opacity: 0 }}
-            exitStyle={{ opacity: 0 }}
+            enterStyle={styles.popoverExit}
+            exitStyle={styles.popoverExit}
           />
         </Popover.Sheet>
       </Adapt>
       <Popover.Content
         borderWidth={1}
         borderColor="$borderColor"
-        enterStyle={{ y: -10, opacity: 0 }}
-        exitStyle={{ y: -10, opacity: 0 }}
+        enterStyle={styles.popoverExit}
+        exitStyle={styles.popoverExit}
         elevate
         animation={[
           'quick',
@@ -157,20 +185,19 @@ function EllipsisButton({ onSelectPage }: EllipsisButtonProps) {
             },
           },
         ]}>
-        <Popover.Arrow borderWidth={1} borderColor="$borderColor" size="$4" />
         <YStack space="$3">
           <XStack space="$2" alignItems="center">
             <Input
               aria-label="Page"
               keyboardType="numeric"
               placeholder="Page"
-              size="$2"
+              size="$3"
               width="$5"
               value={pageInput}
               onChangeText={setPageInput}
             />
             <Popover.Close asChild>
-              <Button size="$2" onPress={handleSelect}>
+              <Button size="$3" onPress={handleSelect}>
                 Go
               </Button>
             </Popover.Close>
@@ -180,3 +207,8 @@ function EllipsisButton({ onSelectPage }: EllipsisButtonProps) {
     </Popover>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {},
+  popoverExit: { opacity: 0 },
+});
